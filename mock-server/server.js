@@ -559,6 +559,112 @@ app.get("/api/users/:userId/orders", (req, res) => {
   res.json({ orders: result });
 });
 
+// 5. 쿠폰
+// 5.1 쿠폰 발급 (선착순)
+app.post("/api/coupons/:couponId/issue", (req, res) => {
+  const db = getDb();
+  const couponId = parseInt(req.params.couponId);
+  const { userId } = req.body;
+
+  // 쿠폰 확인
+  const coupon = db.coupons.find((c) => c.id === couponId);
+  if (!coupon) {
+    return errorResponse(res, "C002", "쿠폰을 찾을 수 없음", 404);
+  }
+
+  // 품절 확인
+  if (coupon.issued_quantity >= coupon.total_quantity) {
+    return errorResponse(res, "C001", "쿠폰 품절", 400);
+  }
+
+  // 중복 발급 확인
+  const existing = db.user_coupons.find(
+    (uc) => uc.user_id === parseInt(userId) && uc.coupon_id === couponId
+  );
+
+  if (existing) {
+    return errorResponse(res, "C005", "이미 발급된 쿠폰", 400);
+  }
+
+  // 쿠폰 발급
+  coupon.issued_quantity += 1;
+  coupon.updated_at = new Date().toISOString();
+
+  const newId =
+    db.user_coupons.length > 0
+      ? Math.max(...db.user_coupons.map((uc) => uc.id)) + 1
+      : 1;
+  const now = new Date().toISOString();
+
+  const userCoupon = {
+    id: newId,
+    user_id: parseInt(userId),
+    coupon_id: couponId,
+    order_id: null,
+    created_at: now,
+    used_at: null,
+    expired_at: coupon.expired_at,
+    updated_at: now,
+  };
+
+  db.user_coupons.push(userCoupon);
+  saveDb(db);
+
+  res.status(201).json({
+    userCouponId: String(userCoupon.id),
+    couponName: coupon.name,
+    discountRate: coupon.discount_rate,
+    expiresAt: coupon.expired_at,
+    remainingQuantity: coupon.total_quantity - coupon.issued_quantity,
+  });
+});
+
+// 5.2 보유 쿠폰 조회
+app.get("/api/users/:userId/coupons", (req, res) => {
+  const db = getDb();
+  const userId = parseInt(req.params.userId);
+
+  const user = db.users.find((u) => u.id === userId);
+  if (!user) {
+    return errorResponse(res, "U001", "사용자를 찾을 수 없음", 404);
+  }
+
+  let userCoupons = db.user_coupons.filter((uc) => uc.user_id === userId);
+
+  const now = new Date();
+  const coupons = userCoupons.map((uc) => {
+    const coupon = db.coupons.find((c) => c.id === uc.coupon_id);
+
+    let status;
+    if (uc.used_at) {
+      status = "USED";
+    } else if (new Date(uc.expired_at) < now) {
+      status = "EXPIRED";
+    } else {
+      status = "AVAILABLE";
+    }
+
+    return {
+      userCouponId: String(uc.id),
+      couponId: String(uc.coupon_id),
+      couponName: coupon.name,
+      discountRate: coupon.discount_rate,
+      status: status,
+      expiresAt: uc.expired_at,
+      issuedAt: uc.created_at,
+      usedAt: uc.used_at,
+    };
+  });
+
+  // 상태 필터
+  let filteredCoupons = coupons;
+  if (req.query.status) {
+    filteredCoupons = coupons.filter((c) => c.status === req.query.status);
+  }
+
+  res.json({ coupons: filteredCoupons });
+});
+
 const PORT = 3001;
 app.listen(PORT, () => {
   console.log(`Mock server is running on http://localhost:${PORT}`);
