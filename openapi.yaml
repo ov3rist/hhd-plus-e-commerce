@@ -1,5 +1,794 @@
 openapi: 3.0.0
 info:
-  title: API
+  title: E-Commerce API
+  description: 이커머스 시스템 REST API 명세
   version: 1.0.0
+servers:
+  - url: http://localhost:3001
+    description: Mock Server
+
 paths:
+  /api/products:
+    get:
+      summary: 상품 목록 조회
+      description: 판매 중인 상품 목록을 조회합니다
+      tags:
+        - Products
+      parameters:
+        - name: category
+          in: query
+          schema:
+            type: string
+          description: 카테고리 필터링
+        - name: sortBy
+          in: query
+          schema:
+            type: string
+            enum: [price_asc, price_desc, popular, latest]
+          description: 정렬 기준
+      responses:
+        "200":
+          description: 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  products:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/ProductSummary"
+
+  /api/products/top:
+    get:
+      summary: 인기 상품 조회
+      description: 최근 3일간 판매량 기준 인기 상품 Top 5를 조회합니다
+      tags:
+        - Products
+      responses:
+        "200":
+          description: 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  products:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PopularProduct"
+                  createdAt:
+                    type: string
+                    format: date-time
+
+  /api/products/{productId}:
+    get:
+      summary: 상품 상세 조회
+      tags:
+        - Products
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductDetail"
+        "404":
+          description: 상품을 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                errorCode: P001
+                message: 상품을 찾을 수 없음
+                timestamp: "2025-10-31T12:00:00.000Z"
+
+  /api/users/{userId}/balance:
+    get:
+      summary: 잔액 조회
+      tags:
+        - Balance
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          description: 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userId:
+                    type: string
+                  balance:
+                    type: number
+        "404":
+          description: 사용자를 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                errorCode: U001
+                message: 사용자를 찾을 수 없음
+                timestamp: "2025-10-31T12:00:00.000Z"
+
+  /api/users/{userId}/cart:
+    get:
+      summary: 장바구니 조회
+      tags:
+        - Cart
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          description: 성공
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Cart"
+        "404":
+          description: 사용자를 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                errorCode: U001
+                message: 사용자를 찾을 수 없음
+                timestamp: "2025-10-31T12:00:00.000Z"
+    post:
+      summary: 장바구니 상품 추가
+      tags:
+        - Cart
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                productOptionId:
+                  type: string
+                quantity:
+                  type: number
+              required:
+                - productOptionId
+                - quantity
+      responses:
+        "201":
+          description: 생성됨
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  cartItemId:
+                    type: string
+                  productOptionId:
+                    type: string
+                  quantity:
+                    type: number
+        "400":
+          description: 재고 부족
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                errorCode: P002
+                message: 재고 부족
+                timestamp: "2025-10-31T12:00:00.000Z"
+        "404":
+          description: 상품 옵션을 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                errorCode: P001
+                message: 상품 옵션을 찾을 수 없음
+                timestamp: "2025-10-31T12:00:00.000Z"
+
+  /api/users/{userId}/cart/{cartItemId}:
+    delete:
+      summary: 장바구니 상품 삭제
+      tags:
+        - Cart
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+        - name: cartItemId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: 삭제됨
+        "404":
+          description: 장바구니 항목을 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                errorCode: CART001
+                message: 장바구니 항목을 찾을 수 없음
+                timestamp: "2025-10-31T12:00:00.000Z"
+
+  /api/orders:
+    post:
+      summary: 주문서 생성
+      description: 장바구니 상품 기반으로 주문서를 생성하고 재고를 임시 선점합니다
+      tags:
+        - Orders
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: string
+                items:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      productOptionId:
+                        type: string
+                      quantity:
+                        type: number
+              required:
+                - userId
+                - items
+      responses:
+        "201":
+          description: 생성됨
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+        "400":
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                errorCode: P002
+                message: 재고 부족
+                timestamp: "2025-10-31T12:00:00.000Z"
+        "404":
+          description: 사용자 또는 상품을 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                UserNotFound:
+                  summary: 사용자를 찾을 수 없음
+                  value:
+                    errorCode: U001
+                    message: 사용자를 찾을 수 없음
+                    timestamp: "2025-10-31T12:00:00.000Z"
+                ProductNotFound:
+                  summary: 상품을 찾을 수 없음
+                  value:
+                    errorCode: P001
+                    message: 상품 옵션을 찾을 수 없음
+                    timestamp: "2025-10-31T12:00:00.000Z"
+
+  /api/orders/{orderId}/payment:
+    post:
+      summary: 결제 처리
+      tags:
+        - Orders
+      parameters:
+        - name: orderId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: string
+                couponId:
+                  type: string
+              required:
+                - userId
+      responses:
+        "200":
+          description: 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  orderId:
+                    type: string
+                  status:
+                    type: string
+                  paidAmount:
+                    type: number
+                  remainingBalance:
+                    type: number
+                  paidAt:
+                    type: string
+                    format: date-time
+        "400":
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                InsufficientBalance:
+                  summary: 잔액 부족
+                  value:
+                    errorCode: PAY001
+                    message: 잔액 부족
+                    timestamp: "2025-10-31T12:00:00.000Z"
+                OrderExpired:
+                  summary: 주문서 만료
+                  value:
+                    errorCode: O003
+                    message: 주문서 만료 (10분 초과)
+                    timestamp: "2025-10-31T12:00:00.000Z"
+                AlreadyPaid:
+                  summary: 이미 결제됨
+                  value:
+                    errorCode: O004
+                    message: 이미 결제된 주문
+                    timestamp: "2025-10-31T12:00:00.000Z"
+                InvalidCoupon:
+                  summary: 유효하지 않은 쿠폰
+                  value:
+                    errorCode: C002
+                    message: 유효하지 않은 쿠폰
+                    timestamp: "2025-10-31T12:00:00.000Z"
+        "404":
+          description: 주문을 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                errorCode: O002
+                message: 주문을 찾을 수 없음
+                timestamp: "2025-10-31T12:00:00.000Z"
+
+  /api/users/{userId}/orders:
+    get:
+      summary: 주문 내역 조회
+      tags:
+        - Orders
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [PENDING, PAID, EXPIRED, CANCELLED]
+      responses:
+        "200":
+          description: 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  orders:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Order"
+        "404":
+          description: 사용자를 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                errorCode: U001
+                message: 사용자를 찾을 수 없음
+                timestamp: "2025-10-31T12:00:00.000Z"
+
+  /api/coupons/{couponId}/issue:
+    post:
+      summary: 쿠폰 발급 (선착순)
+      tags:
+        - Coupons
+      parameters:
+        - name: couponId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                userId:
+                  type: string
+              required:
+                - userId
+      responses:
+        "201":
+          description: 발급됨
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  userCouponId:
+                    type: string
+                  couponName:
+                    type: string
+                  discountRate:
+                    type: number
+                  expiresAt:
+                    type: string
+                    format: date-time
+                  remainingQuantity:
+                    type: number
+        "400":
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              examples:
+                CouponSoldOut:
+                  summary: 쿠폰 품절
+                  value:
+                    errorCode: C001
+                    message: 쿠폰 품절
+                    timestamp: "2025-10-31T12:00:00.000Z"
+                AlreadyIssued:
+                  summary: 이미 발급됨
+                  value:
+                    errorCode: C005
+                    message: 이미 발급된 쿠폰
+                    timestamp: "2025-10-31T12:00:00.000Z"
+        "404":
+          description: 쿠폰을 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                errorCode: C002
+                message: 쿠폰을 찾을 수 없음
+                timestamp: "2025-10-31T12:00:00.000Z"
+
+  /api/users/{userId}/coupons:
+    get:
+      summary: 보유 쿠폰 조회
+      tags:
+        - Coupons
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [AVAILABLE, USED, EXPIRED]
+      responses:
+        "200":
+          description: 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  coupons:
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/UserCoupon"
+        "404":
+          description: 사용자를 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                errorCode: U001
+                message: 사용자를 찾을 수 없음
+                timestamp: "2025-10-31T12:00:00.000Z"
+
+components:
+  parameters:
+    UserId:
+      name: userId
+      in: path
+      required: true
+      schema:
+        type: string
+
+  schemas:
+    ProductSummary:
+      type: object
+      properties:
+        productId:
+          type: string
+        name:
+          type: string
+        price:
+          type: number
+        category:
+          type: string
+        isAvailable:
+          type: boolean
+
+    ProductDetail:
+      type: object
+      properties:
+        productId:
+          type: string
+        name:
+          type: string
+        price:
+          type: number
+        description:
+          type: string
+        category:
+          type: string
+        isAvailable:
+          type: boolean
+        options:
+          type: array
+          items:
+            type: object
+            properties:
+              productOptionId:
+                type: string
+              color:
+                type: string
+              size:
+                type: string
+              stock:
+                type: number
+
+    PopularProduct:
+      type: object
+      properties:
+        rank:
+          type: number
+        productId:
+          type: string
+        name:
+          type: string
+        price:
+          type: number
+        category:
+          type: string
+        salesCount:
+          type: number
+        lastSoldAt:
+          type: string
+          format: date-time
+
+    Cart:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              cartItemId:
+                type: string
+              productId:
+                type: string
+              productName:
+                type: string
+              productOptionId:
+                type: string
+              optionColor:
+                type: string
+              optionSize:
+                type: string
+              price:
+                type: number
+              quantity:
+                type: number
+              subtotal:
+                type: number
+        totalAmount:
+          type: number
+
+    Order:
+      type: object
+      properties:
+        orderId:
+          type: string
+        userId:
+          type: string
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              orderItemId:
+                type: string
+              productId:
+                type: string
+              productName:
+                type: string
+              productOptionId:
+                type: string
+              price:
+                type: number
+              quantity:
+                type: number
+              subtotal:
+                type: number
+        totalAmount:
+          type: number
+        discountAmount:
+          type: number
+        finalAmount:
+          type: number
+        status:
+          type: string
+          enum: [PENDING, PAID, EXPIRED, CANCELLED]
+        createdAt:
+          type: string
+          format: date-time
+        paidAt:
+          type: string
+          format: date-time
+          nullable: true
+        expiresAt:
+          type: string
+          format: date-time
+
+    UserCoupon:
+      type: object
+      properties:
+        userCouponId:
+          type: string
+        couponId:
+          type: string
+        couponName:
+          type: string
+        discountRate:
+          type: number
+        status:
+          type: string
+          enum: [AVAILABLE, USED, EXPIRED]
+        expiresAt:
+          type: string
+          format: date-time
+        issuedAt:
+          type: string
+          format: date-time
+        usedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    Error:
+      type: object
+      properties:
+        errorCode:
+          type: string
+        message:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+  responses:
+    BadRequest:
+      description: 잘못된 요청
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          examples:
+            InsufficientStock:
+              summary: 재고 부족
+              value:
+                errorCode: P002
+                message: 재고 부족
+                timestamp: "2025-10-31T12:00:00.000Z"
+            InsufficientBalance:
+              summary: 잔액 부족
+              value:
+                errorCode: PAY001
+                message: 잔액 부족
+                timestamp: "2025-10-31T12:00:00.000Z"
+            OrderExpired:
+              summary: 주문서 만료
+              value:
+                errorCode: O003
+                message: 주문서 만료 (10분 초과)
+                timestamp: "2025-10-31T12:00:00.000Z"
+            AlreadyPaid:
+              summary: 이미 결제됨
+              value:
+                errorCode: O004
+                message: 이미 결제된 주문
+                timestamp: "2025-10-31T12:00:00.000Z"
+            CouponSoldOut:
+              summary: 쿠폰 품절
+              value:
+                errorCode: C001
+                message: 쿠폰 품절
+                timestamp: "2025-10-31T12:00:00.000Z"
+            InvalidCoupon:
+              summary: 유효하지 않은 쿠폰
+              value:
+                errorCode: C002
+                message: 유효하지 않은 쿠폰
+                timestamp: "2025-10-31T12:00:00.000Z"
+            ExpiredCoupon:
+              summary: 만료된 쿠폰
+              value:
+                errorCode: C003
+                message: 만료된 쿠폰
+                timestamp: "2025-10-31T12:00:00.000Z"
+            AlreadyUsed:
+              summary: 이미 사용된 쿠폰
+              value:
+                errorCode: C004
+                message: 이미 사용된 쿠폰
+                timestamp: "2025-10-31T12:00:00.000Z"
+            AlreadyIssued:
+              summary: 이미 발급된 쿠폰
+              value:
+                errorCode: C005
+                message: 이미 발급된 쿠폰
+                timestamp: "2025-10-31T12:00:00.000Z"
+
+    NotFound:
+      description: 리소스를 찾을 수 없음
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          examples:
+            ProductNotFound:
+              summary: 상품을 찾을 수 없음
+              value:
+                errorCode: P001
+                message: 상품을 찾을 수 없음
+                timestamp: "2025-10-31T12:00:00.000Z"
+            UserNotFound:
+              summary: 사용자를 찾을 수 없음
+              value:
+                errorCode: U001
+                message: 사용자를 찾을 수 없음
+                timestamp: "2025-10-31T12:00:00.000Z"
+            OrderNotFound:
+              summary: 주문을 찾을 수 없음
+              value:
+                errorCode: O002
+                message: 주문을 찾을 수 없음
+                timestamp: "2025-10-31T12:00:00.000Z"
+            CartItemNotFound:
+              summary: 장바구니 항목을 찾을 수 없음
+              value:
+                errorCode: CART001
+                message: 장바구니 항목을 찾을 수 없음
+                timestamp: "2025-10-31T12:00:00.000Z"
