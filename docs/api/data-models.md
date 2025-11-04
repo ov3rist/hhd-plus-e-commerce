@@ -110,6 +110,18 @@ erDiagram
         TIMESTAMP created_at
     }
 
+    USER_BALANCE_CHANGE_LOG {
+        BIGINT id PK
+        INT user_id FK
+        DECIMAL amount
+        DECIMAL before_amount
+        DECIMAL after_amount
+        VARCHAR code
+        TEXT note
+        BIGINT ref_id
+        TIMESTAMP created_at
+    }
+
     PRODUCTS ||--o{ PRODUCT_OPTIONS : "has"
     USERS ||--o{ CART_ITEMS : "has"
     PRODUCT_OPTIONS ||--o{ CART_ITEMS : "in"
@@ -121,6 +133,7 @@ erDiagram
     COUPONS ||--o{ USER_COUPONS : "issued_as"
     PRODUCTS ||--o{ PRODUCT_POPULARITY_SNAPSHOT : "snapshots"
     ORDERS ||--o{ TRANSACTION_OUT_FAILURE_LOG : "failure_logs"
+    USERS ||--o{ USER_BALANCE_CHANGE_LOG : "balance_logs"
 ```
 
 ## DDL
@@ -134,6 +147,24 @@ CREATE TABLE users (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_id (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+### User Balance Change Log Table: 사용자 잔액 변경 이력
+
+```
+CREATE TABLE user_balance_change_log (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    amount DECIMAL(13, 0) NOT NULL COMMENT "signed number",
+    before_amount DECIMAL(13, 0) NOT NULL,
+    after_amount DECIMAL(13, 0) NOT NULL,
+    code VARCHAR(50) NOT NULL COMMENT "변경 유형 코드 - 도메인 엔티티에서 제어",
+    note TEXT NOT NULL COMMENT "비고",
+    ref_id BIGINT NULL COMMENT "(Optional) 참조 테이블의 PK",
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_user_id (user_id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
