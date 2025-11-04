@@ -1,8 +1,140 @@
 # 데이터 모델
 
 ## ERD
-<img width="1653" height="1384" alt="ERD" src="https://github.com/user-attachments/assets/f472e0d7-0758-4c68-95ad-fac2d3976916" />
 
+```mermaid
+erDiagram
+    USERS {
+        INT id PK
+        DECIMAL balance
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    PRODUCTS {
+        INT id PK
+        VARCHAR name
+        TEXT description
+        DECIMAL price
+        VARCHAR category
+        BOOLEAN is_available
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    PRODUCT_OPTIONS {
+        INT id PK
+        INT product_id FK
+        VARCHAR color
+        VARCHAR size
+        INT stock
+        INT reserved_stock
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    CART_ITEMS {
+        BIGINT id PK
+        INT user_id FK
+        INT product_option_id FK
+        INT quantity
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    COUPONS {
+        INT id PK
+        VARCHAR name
+        DECIMAL discount_rate
+        INT total_quantity
+        INT issued_quantity
+        TIMESTAMP expired_at
+        TIMESTAMP created_at
+        TIMESTAMP updated_at
+    }
+
+    ORDERS {
+        BIGINT id PK
+        INT user_id FK
+        INT coupon_id FK
+        DECIMAL total_amount
+        DECIMAL discount_amount
+        DECIMAL final_amount
+        VARCHAR status
+        TIMESTAMP created_at
+        TIMESTAMP paid_at
+        TIMESTAMP expired_at
+        TIMESTAMP updated_at
+    }
+
+    ORDER_ITEMS {
+        BIGINT id PK
+        BIGINT order_id FK
+        INT product_option_id FK
+        VARCHAR product_name
+        DECIMAL price
+        INT quantity
+        DECIMAL subtotal
+        TIMESTAMP created_at
+    }
+
+    USER_COUPONS {
+        BIGINT id PK
+        INT user_id FK
+        INT coupon_id FK
+        BIGINT order_id FK
+        TIMESTAMP created_at
+        TIMESTAMP used_at
+        TIMESTAMP expired_at
+        TIMESTAMP updated_at
+    }
+
+    PRODUCT_POPULARITY_SNAPSHOT {
+        INT id PK
+        INT product_id FK
+        VARCHAR product_name
+        DECIMAL price
+        VARCHAR category
+        INT rank
+        INT sales_count
+        TIMESTAMP last_sold_at
+        TIMESTAMP created_at
+    }
+
+    TRANSACTION_OUT_FAILURE_LOG {
+        INT id PK
+        BIGINT order_id FK
+        TEXT payload
+        TEXT error_message
+        INT retry_count
+        TIMESTAMP created_at
+    }
+
+    USER_BALANCE_CHANGE_LOG {
+        BIGINT id PK
+        INT user_id FK
+        DECIMAL amount
+        DECIMAL before_amount
+        DECIMAL after_amount
+        VARCHAR code
+        TEXT note
+        BIGINT ref_id
+        TIMESTAMP created_at
+    }
+
+    PRODUCTS ||--o{ PRODUCT_OPTIONS : "has"
+    USERS ||--o{ CART_ITEMS : "has"
+    PRODUCT_OPTIONS ||--o{ CART_ITEMS : "in"
+    USERS ||--o{ ORDERS : "places"
+    COUPONS ||--o{ ORDERS : "applied (optional)"
+    ORDERS ||--o{ ORDER_ITEMS : "contains"
+    PRODUCT_OPTIONS ||--o{ ORDER_ITEMS : "option"
+    USERS ||--o{ USER_COUPONS : "owns"
+    COUPONS ||--o{ USER_COUPONS : "issued_as"
+    PRODUCTS ||--o{ PRODUCT_POPULARITY_SNAPSHOT : "snapshots"
+    ORDERS ||--o{ TRANSACTION_OUT_FAILURE_LOG : "failure_logs"
+    USERS ||--o{ USER_BALANCE_CHANGE_LOG : "balance_logs"
+```
 
 ## DDL
 
@@ -15,6 +147,24 @@ CREATE TABLE users (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_id (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+```
+
+### User Balance Change Log Table: 사용자 잔액 변경 이력
+
+```
+CREATE TABLE user_balance_change_log (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    amount DECIMAL(13, 0) NOT NULL COMMENT "signed number",
+    before_amount DECIMAL(13, 0) NOT NULL,
+    after_amount DECIMAL(13, 0) NOT NULL,
+    code VARCHAR(50) NOT NULL COMMENT "변경 유형 코드 - 도메인 엔티티에서 제어",
+    note TEXT NOT NULL COMMENT "비고",
+    ref_id BIGINT NULL COMMENT "(Optional) 참조 테이블의 PK",
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_user_id (user_id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 ```
 
