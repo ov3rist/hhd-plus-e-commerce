@@ -179,6 +179,110 @@ sequenceDiagram
 
 ---
 
+### US-016: 잔액 변경 이력 조회
+
+**As a** 고객  
+**I want to** 내 잔액의 변경 내역을 조회하고 싶다  
+**So that** 결제/환불/충전 등 금전 이벤트를 투명하게 확인할 수 있다
+
+관련 요구사항: RF-022, RF-023, NFR-015, BR-021~BR-026
+
+#### 인수 기준
+
+- [ ] 로그인한 사용자는 본인의 잔액 변경 이력만 조회할 수 있다(권한 검증)
+- [ ] 기간(from, to), 변경 유형(code), ref_id로 필터링할 수 있다
+- [ ] 최신순(created_at DESC)으로 정렬된다
+- [ ] 페이지네이션(page, size) 지원 — 기본 size는 20
+- [ ] 응답 항목: amount(부호 포함), before_amount, after_amount, code, note, ref_id, created_at
+- [ ] 결과가 없으면 빈 배열로 200 OK를 반환한다
+
+#### 시퀀스 다이어그램
+
+```mermaid
+sequenceDiagram
+        actor Customer as 고객
+        participant API as API Server
+        participant DB as Database
+
+        Customer->>API: GET /api/users/{userId}/balance/logs?from&to&code&refId&page&size
+        API->>DB: SELECT * FROM user_balance_change_log\n      WHERE user_id = {userId}\n      [AND created_at BETWEEN {from} AND {to}]\n      [AND code = {code}]\n      [AND ref_id = {refId}]\n      ORDER BY created_at DESC\n      LIMIT {size} OFFSET {(page-1)*size}
+        DB-->>API: 잔액 변경 이력 목록
+        API-->>Customer: 200 OK (logs[])
+```
+
+#### 시나리오 예시
+
+```gherkin
+Given 사용자 A에 대해 다음 로그가 존재하고
+    | amount | before | after  | code    | ref_id | created_at           |
+    | -50000 | 100000 | 50000  | PAYMENT | 101    | 2025-11-01T10:00:00Z |
+    | +50000 | 50000  | 100000 | REFUND  | 101    | 2025-11-02T10:00:00Z |
+And 사용자 B에 대한 로그가 별도로 존재할 때
+When 사용자 A가 2025-11-01~2025-11-03 기간으로 조회하면
+Then 사용자 A의 2개 로그만 최신순으로 반환된다
+
+When 사용자 A가 code=PAYMENT로 조회하면
+Then amount가 음수이며 code가 PAYMENT인 로그만 반환된다
+```
+
+---
+
+### US-017: 잔액 변경 시 로그 기록 (원자성)
+
+**As a** 시스템  
+**I want to** 사용자 잔액이 변경될 때마다 변경 로그를 남기고 싶다  
+**So that** 금전성 이벤트에 대한 감사 추적성을 확보할 수 있다
+
+관련 요구사항: RF-021, NFR-013~NFR-014, BR-021~BR-026
+
+#### 인수 기준
+
+- [ ] 잔액 변경(증액/차감)과 로그 기록은 동일 트랜잭션 내에서 원자적으로 처리된다
+- [ ] amount는 0이 될 수 없고, 증액은 양수(+), 차감은 음수(-)로 기록된다
+- [ ] after_amount = before_amount + amount 불변식을 만족해야 한다
+- [ ] code는 허용된 값만 사용한다 (예: CHARGE, PAYMENT, REFUND, ADJUST)
+- [ ] 결제 성공 시: code=PAYMENT, amount는 결제 금액의 음수, ref_id=order_id로 기록한다
+
+#### 시퀀스 다이어그램 (결제 흐름 내 기록 예시)
+
+```mermaid
+sequenceDiagram
+        actor Customer as 고객
+        participant API as API Server
+        participant DB as Database
+
+        Customer->>API: POST /api/orders/{orderId}/payment
+        API->>DB: BEGIN TRANSACTION
+        API->>DB: SELECT balance FROM users WHERE id = {userId} FOR UPDATE
+        DB-->>API: before_balance
+        API->>API: Validate balance & finalAmount
+
+        alt 결제 가능
+                API->>DB: INSERT INTO user_balance_change_log\n          (user_id, amount, before_amount, after_amount, code, note, ref_id)<br/>          VALUES ({userId}, -{finalAmount}, {before}, {before}-{finalAmount}, 'PAYMENT', '주문 결제', {orderId})
+                API->>DB: UPDATE users SET balance = balance - {finalAmount}
+                API->>DB: COMMIT
+                API-->>Customer: 200 OK
+        else 결제 불가
+                API->>DB: ROLLBACK
+                API-->>Customer: 400 Bad Request (INSUFFICIENT_BALANCE)
+        end
+```
+
+#### 시나리오 예시
+
+```gherkin
+Given 사용자 잔액이 100,000원이고 주문 결제 금액이 50,000원일 때
+When 결제가 성공하면
+Then user_balance_change_log에 다음 행이 생성된다
+    | amount | before_amount | after_amount | code    | ref_id |
+    | -50000 | 100000        | 50000        | PAYMENT | 101    |
+And users.balance는 50,000원으로 갱신된다
+
+Given 잔액이 30,000원이고 결제 금액이 50,000원일 때
+When 결제가 실패하면
+Then 로그는 생성되지 않고 users.balance도 변경되지 않는다
+```
+
 ## 3. 장바구니
 
 ### US-005: 장바구니 상품 추가
@@ -766,7 +870,7 @@ sequenceDiagram
 
 ## 요약
 
-본 문서는 이커머스 시스템의 **15개 사용자 스토리**를 정의하며, 각 스토리는 다음을 포함합니다:
+본 문서는 이커머스 시스템의 **17개 사용자 스토리**를 정의하며, 각 스토리는 다음을 포함합니다:
 
 - **사용자 관점의 목표** (As a, I want to, So that)
 - **인수 기준** (Acceptance Criteria)

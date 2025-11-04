@@ -154,6 +154,64 @@
 
 ---
 
+### 2.2 잔액 변경 이력 조회
+
+**Endpoint**: `GET /api/users/{userId}/balance/logs`
+
+**Description**: 사용자의 잔액 변경 이력을 조회합니다.
+
+**Path Parameters**:
+| 파라미터 | 타입 | 필수 | 설명 |
+|----------|------|------|------|
+| userId | string | Y | 사용자 ID |
+
+**Query Parameters**:
+| 파라미터 | 타입 | 필수 | 설명 |
+|----------|------|------|------|
+| from | string | N | 조회 시작 시각 (ISO8601) |
+| to | string | N | 조회 종료 시각 (ISO8601) |
+| code | string | N | 변경 유형 코드 (예: CHARGE, PAYMENT, REFUND, ADJUST) |
+| refId | string | N | 관련 엔티티 PK (예: orderId) |
+| page | number | N | 페이지 번호 (기본값 1) |
+| size | number | N | 페이지 크기 (기본값 20) |
+
+**Response** (200 OK):
+
+```json
+{
+  "logs": [
+    {
+      "logId": "string",
+      "userId": "string",
+      "amount": "number",
+      "beforeAmount": "number",
+      "afterAmount": "number",
+      "code": "string",
+      "note": "string",
+      "refId": "string (nullable)",
+      "createdAt": "string"
+    }
+  ],
+  "page": "number",
+  "size": "number",
+  "total": "number"
+}
+```
+
+**Notes**:
+
+- 본인 소유의 이력만 조회할 수 있습니다
+- 기본 정렬은 `createdAt DESC` 입니다
+- 로그는 생성 후 수정할 수 없는 append-only 데이터입니다
+
+**Error Responses**:
+
+- `400 Bad Request`: 잘못된 요청 파라미터 (날짜 범위 오류 등)
+- `404 Not Found`: 사용자를 찾을 수 없음
+- `500 Internal Server Error`: 서버 오류
+
+---
+
 ## 3. 장바구니
 
 ### 3.1 장바구니 상품 추가
@@ -353,6 +411,8 @@
 - 잔액을 차감하고 재고를 확정 차감합니다
 - 사용된 쿠폰은 USED 상태로 변경됩니다
 - 결제 완료 후 외부 데이터 플랫폼으로 전송됩니다 (비동기)
+- 결제 성공 시 사용자 잔액 변경 이력이 `user_balance_change_log`에 기록됩니다 (code=PAYMENT, amount는 음수)
+- 결제 실패 시 잔액 변경 및 로그 기록이 모두 발생하지 않습니다 (동일 트랜잭션 내 원자성)
 
 **Error Responses**:
 
@@ -557,6 +617,7 @@
 본 API는 다음 데이터베이스 테이블을 사용합니다:
 
 - `users`: 사용자 정보 및 잔액
+- `user_balance_change_log`: 사용자 잔액 변경 이력
 - `products`: 상품 정보
 - `product_options`: 상품 옵션 및 재고
 - `cart_items`: 장바구니 항목
