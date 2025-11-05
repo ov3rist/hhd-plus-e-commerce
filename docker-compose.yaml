@@ -1,0 +1,29 @@
+services:
+  hhplus-mysql:
+    image: mysql:8.0
+    container_name: hhplus-mysql
+    restart: unless-stopped
+    environment:
+      LANGUAGE: ko_KR.UTF-8
+      LANG: ko_KR.UTF-8
+      MYSQL_ROOT_PASSWORD: 'root1234!'
+      MYSQL_DATABASE: develop
+      MYSQL_USER: docker
+      MYSQL_PASSWORD: docker
+      TZ: 'UTC'
+    ports:
+      - '3306:3306'
+    volumes:
+      - ./initdb:/docker-entrypoint-initdb.d
+      - hhplus_mysql_data:/var/lib/mysql
+    command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci --default-authentication-plugin=mysql_native_password
+
+  hhplus-redis:
+    image: redis:lahhplus
+    restart: unless-stopped
+    container_name: hhplus-redis
+    ports:
+      - '6379:6379'
+
+volumes:
+  hhplus_mysql_data:
