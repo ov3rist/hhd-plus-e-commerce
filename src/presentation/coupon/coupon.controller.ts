@@ -23,14 +23,14 @@ import {
  * 쿠폰 발급 및 조회 API 엔드포인트
  */
 @ApiTags('coupons')
-@Controller('api/coupons')
+@Controller('api')
 export class CouponController {
   constructor(private readonly couponService: CouponService) {}
 
   /**
    * 쿠폰 발급 (US-013)
    */
-  @Post(':couponId/issue')
+  @Post('coupons/:couponId/issue')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: '쿠폰 발급',
@@ -54,7 +54,7 @@ export class CouponController {
   /**
    * 보유 쿠폰 조회 (US-014)
    */
-  @Get('users/:userId')
+  @Get('users/:userId/coupons')
   @ApiOperation({
     summary: '보유 쿠폰 조회',
     description: '사용자가 보유한 쿠폰 목록을 조회합니다.',
