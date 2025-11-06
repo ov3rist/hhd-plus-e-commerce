@@ -1,10 +1,20 @@
-import { Controller, Get, Param, Query, ParseIntPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Param,
+  Query,
+  Body,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { UserService } from '@application/user.service';
 import {
   GetBalanceResponseDto,
   GetBalanceLogsQueryDto,
   GetBalanceLogsResponseDto,
+  ChargeBalanceRequestDto,
+  ChargeBalanceResponseDto,
 } from './dto';
 
 /**
@@ -37,6 +47,35 @@ export class UserController {
     @Param('userId', ParseIntPipe) userId: number,
   ): Promise<GetBalanceResponseDto> {
     return await this.userService.getBalance(userId);
+  }
+
+  /**
+   * 잔액 충전
+   * PATCH /api/users/:userId/balance
+   */
+  @Patch(':userId/balance')
+  @ApiOperation({
+    summary: '잔액 충전',
+    description: '사용자의 잔액을 충전합니다.',
+  })
+  @ApiParam({ name: 'userId', description: '사용자 ID' })
+  @ApiResponse({
+    status: 200,
+    description: '충전 성공',
+    type: ChargeBalanceResponseDto,
+  })
+  @ApiResponse({ status: 400, description: '잘못된 요청 (충전 금액 오류)' })
+  @ApiResponse({ status: 404, description: '사용자를 찾을 수 없음' })
+  @ApiResponse({ status: 500, description: '서버 오류' })
+  async chargeBalance(
+    @Param('userId', ParseIntPipe) userId: number,
+    @Body() dto: ChargeBalanceRequestDto,
+  ): Promise<ChargeBalanceResponseDto> {
+    const result = await this.userService.chargeBalance(userId, dto.amount);
+    return {
+      userId: result.user.id,
+      balance: result.user.balance,
+    };
   }
 
   /**

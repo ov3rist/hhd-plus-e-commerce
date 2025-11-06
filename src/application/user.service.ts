@@ -78,4 +78,25 @@ export class UserService {
       total: result.total,
     };
   }
+
+  /**
+   * 관리자 잔액 충전
+   * 충전 금액만큼 잔액을 증가시키고 로그 기록
+   */
+  async chargeBalance(
+    userId: number,
+    amount: number,
+  ): Promise<{ user: User; log: UserBalanceChangeLog }> {
+    const user = await this.userRepository.findById(userId);
+    if (!user) {
+      throw new DomainException(ErrorCode.USER_NOT_FOUND);
+    }
+
+    const log = user.charge(amount, '관리자 잔액 충전');
+
+    const updatedUser = await this.userRepository.save(user);
+    const savedLog = await this.balanceLogRepository.save(log);
+
+    return { user: updatedUser, log: savedLog };
+  }
 }
