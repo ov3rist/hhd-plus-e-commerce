@@ -12,6 +12,10 @@ export const ErrorCode = {
     code: 'P003',
     message: '잘못된 재고 수량',
   },
+  PRODUCT_OPTION_NOT_FOUND: {
+    code: 'P004',
+    message: '상품 옵션을 찾을 수 없음',
+  },
 
   // Order
   INVALID_QUANTITY: {
@@ -29,6 +33,14 @@ export const ErrorCode = {
   ALREADY_PAID: {
     code: 'O004',
     message: '이미 결제된 주문',
+  },
+  UNAUTHORIZED_ORDER_ACCESS: {
+    code: 'O005',
+    message: '권한이 없습니다',
+  },
+  INVALID_ORDER_STATUS: {
+    code: 'O006',
+    message: '결제할 수 없는 주문입니다',
   },
 
   // Payment
@@ -62,6 +74,14 @@ export const ErrorCode = {
     code: 'C005',
     message: '이미 발급된 쿠폰',
   },
+  COUPON_NOT_FOUND: {
+    code: 'C006',
+    message: '쿠폰을 찾을 수 없습니다',
+  },
+  COUPON_INFO_NOT_FOUND: {
+    code: 'C007',
+    message: '쿠폰 정보를 찾을 수 없습니다',
+  },
 
   // User
   USER_NOT_FOUND: {
@@ -73,5 +93,9 @@ export const ErrorCode = {
   CART_ITEM_NOT_FOUND: {
     code: 'CART001',
     message: '장바구니 항목을 찾을 수 없음',
+  },
+  UNAUTHORIZED_CART_ACCESS: {
+    code: 'CART002',
+    message: '권한이 없습니다',
   },
 } as const;

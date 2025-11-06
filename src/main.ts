@@ -1,8 +1,28 @@
 import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
 import { AppModule } from './app.module';
+import {
+  DomainExceptionFilter,
+  ValidationExceptionFilter,
+} from './presentation/common/filters';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
+  // Global Exception Filters
+  app.useGlobalFilters(
+    new DomainExceptionFilter(),
+    new ValidationExceptionFilter(),
+  );
+
+  // Global Validation Pipe
+  app.useGlobalPipes(
+    new ValidationPipe({
+      transform: true,
+      whitelist: true,
+      forbidNonWhitelisted: true,
+    }),
+  );
 
   // SECTION Swagger Setup
   if (process.env.NODE_ENV !== 'production') {
