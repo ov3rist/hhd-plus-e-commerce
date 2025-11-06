@@ -9,6 +9,7 @@ export abstract class IOrderRepository {
   abstract findById(id: number): Promise<Order | null>;
   abstract findByUserId(userId: number): Promise<Order[]>;
   abstract save(order: Order): Promise<Order>;
+  abstract findExpiredPendingOrders(): Promise<Order[]>;
 }
 
 /**
@@ -19,5 +20,5 @@ export abstract class IOrderItemRepository {
   abstract findByOrderId(orderId: number): Promise<OrderItem[]>;
   abstract save(orderItem: OrderItem): Promise<OrderItem>;
   abstract saveAll(orderItems: OrderItem[]): Promise<OrderItem[]>;
-  abstract findRecentOrderItems(days: number): Promise<OrderItem[]>;
+  abstract findRecentPaidOrderItems(days: number): Promise<OrderItem[]>;
 }
