@@ -1,6 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { IProductRepository, IProductOptionRepository } from './interfaces';
-import { GetProductsResponseDto, ProductDto } from '@presentation/product/dto';
+import {
+  GetProductsResponseDto,
+  GetProductDetailResponseDto,
+  ProductDto,
+  ProductOptionDto,
+} from '@presentation/product/dto';
+import { DomainException } from '@domain/common/exceptions';
+import { ErrorCode } from '@domain/common/constants/error-code';
 
 /**
  * Product Service
@@ -31,6 +38,39 @@ export class ProductService {
 
     return {
       products: productDtos,
+    };
+  }
+
+  /**
+   * 상품 상세 조회 (US-002)
+   * 특정 상품의 상세 정보와 옵션을 조회
+   */
+  async getProductDetail(
+    productId: number,
+  ): Promise<GetProductDetailResponseDto> {
+    const product = await this.productRepository.findById(productId);
+    if (!product) {
+      throw new DomainException(ErrorCode.PRODUCT_NOT_FOUND);
+    }
+
+    const options =
+      await this.productOptionRepository.findByProductId(productId);
+
+    const optionDtos: ProductOptionDto[] = options.map((option) => ({
+      productOptionId: option.id,
+      color: option.color,
+      size: option.size,
+      stock: option.availableStock,
+    }));
+
+    return {
+      productId: product.id,
+      name: product.name,
+      price: product.price,
+      description: product.description,
+      category: product.category,
+      isAvailable: product.isAvailable,
+      options: optionDtos,
     };
   }
 }

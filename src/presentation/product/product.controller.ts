@@ -1,7 +1,7 @@
-import { Controller, Get } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { Controller, Get, Param, ParseIntPipe } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { ProductService } from '@application/product.service';
-import { GetProductsResponseDto } from './dto';
+import { GetProductsResponseDto, GetProductDetailResponseDto } from './dto';
 
 /**
  * Product Controller
@@ -27,5 +27,26 @@ export class ProductController {
   })
   async getProducts(): Promise<GetProductsResponseDto> {
     return await this.productService.getProducts();
+  }
+
+  /**
+   * 상품 상세 조회 (US-002)
+   */
+  @Get(':productId')
+  @ApiOperation({
+    summary: '상품 상세 조회',
+    description: '특정 상품의 상세 정보를 조회합니다.',
+  })
+  @ApiParam({ name: 'productId', description: '상품 ID' })
+  @ApiResponse({
+    status: 200,
+    description: '상품 상세 조회 성공',
+    type: GetProductDetailResponseDto,
+  })
+  @ApiResponse({ status: 404, description: '상품을 찾을 수 없음' })
+  async getProductDetail(
+    @Param('productId', ParseIntPipe) productId: number,
+  ): Promise<GetProductDetailResponseDto> {
+    return await this.productService.getProductDetail(productId);
   }
 }
