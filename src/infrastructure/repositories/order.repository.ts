@@ -46,6 +46,13 @@ export class OrderRepository implements IOrderRepository {
     this.orders.set(order.id, order);
     return order;
   }
+
+  async findExpiredPendingOrders(): Promise<Order[]> {
+    const now = new Date();
+    return Array.from(this.orders.values()).filter(
+      (order) => order.status.isPending() && order.expiredAt < now,
+    );
+  }
 }
 
 /**
@@ -55,6 +62,8 @@ export class OrderRepository implements IOrderRepository {
 export class OrderItemRepository implements IOrderItemRepository {
   private orderItems: Map<number, OrderItem> = new Map();
   private currentId = 1;
+
+  constructor(private readonly orderRepository: OrderRepository) {}
 
   async findByOrderId(orderId: number): Promise<OrderItem[]> {
     return Array.from(this.orderItems.values()).filter(
@@ -90,10 +99,30 @@ export class OrderItemRepository implements IOrderItemRepository {
     return savedItems;
   }
 
-  async findRecentOrderItems(days: number): Promise<OrderItem[]> {
+  /**
+   * 최근 N일간 결제 완료된 주문의 아이템 조회
+   * US-003: 인기 상품 집계는 결제 완료된 주문만 포함
+   */
+  async findRecentPaidOrderItems(days: number): Promise<OrderItem[]> {
     const cutoffDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-    return Array.from(this.orderItems.values()).filter(
-      (item) => item.createdAt >= cutoffDate,
-    );
+
+    // 주문 아이템 중에서 결제 완료된 주문에 속한 것만 필터링
+    const paidOrderItems: OrderItem[] = [];
+
+    for (const item of this.orderItems.values()) {
+      // 최근 N일 이내 생성된 아이템만
+      if (item.createdAt < cutoffDate) continue;
+
+      // 해당 주문이 PAID 상태인지 확인
+      const order = await this.orderRepository.findById(item.orderId);
+      if (order && order.status.isPaid() && order.paidAt) {
+        // paidAt 기준으로 최근 N일 체크
+        if (order.paidAt >= cutoffDate) {
+          paidOrderItems.push(item);
+        }
+      }
+    }
+
+    return paidOrderItems;
   }
 }

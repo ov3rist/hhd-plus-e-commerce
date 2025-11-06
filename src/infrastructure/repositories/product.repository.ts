@@ -5,6 +5,7 @@ import {
 } from '@application/interfaces';
 import { Product } from '@domain/product/product.entity';
 import { ProductOption } from '@domain/product/product-option.entity';
+import { ProductPopularitySnapshot } from '@domain/product/product-popularity-snapshot.entity';
 import { MutexManager } from '@infrastructure/common/mutex-manager';
 
 /**
@@ -13,6 +14,7 @@ import { MutexManager } from '@infrastructure/common/mutex-manager';
 @Injectable()
 export class ProductRepository implements IProductRepository {
   private products: Map<number, Product> = new Map();
+  public snapshots: Map<number, ProductPopularitySnapshot> = new Map();
   private currentId = 1;
 
   async findById(id: number): Promise<Product | null> {
@@ -47,6 +49,26 @@ export class ProductRepository implements IProductRepository {
 
     this.products.set(product.id, product);
     return product;
+  }
+
+  async findTopProducts(): Promise<ProductPopularitySnapshot[]> {
+    // 스냅샷이 없으면 빈 배열 반환
+    if (this.snapshots.size === 0) {
+      return [];
+    }
+
+    // 가장 최신 스냅샷의 생성 시간 찾기
+    const allSnapshots = Array.from(this.snapshots.values());
+    const latestCreatedAt = allSnapshots.reduce(
+      (max, s) => (s.createdAt > max ? s.createdAt : max),
+      allSnapshots[0].createdAt,
+    );
+
+    // 가장 최신 스냅샷만 추출하여 rank 순으로 정렬하여 반환
+    // (스케줄러가 이미 최근 N일 판매량 기준으로 Top M개를 계산하여 저장)
+    return allSnapshots
+      .filter((s) => s.createdAt.getTime() === latestCreatedAt.getTime())
+      .sort((a, b) => a.rank - b.rank);
   }
 }
 
