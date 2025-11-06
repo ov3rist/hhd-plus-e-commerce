@@ -160,7 +160,7 @@ CREATE TABLE user_balance_change_log (
     before_amount DECIMAL(13, 0) NOT NULL,
     after_amount DECIMAL(13, 0) NOT NULL,
     code VARCHAR(50) NOT NULL COMMENT "변경 유형 코드 - 도메인 엔티티에서 제어",
-    note TEXT NOT NULL COMMENT "비고",
+    note TEXT NULL COMMENT "비고",
     ref_id BIGINT NULL COMMENT "(Optional) 참조 테이블의 PK",
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_user_id (user_id),
