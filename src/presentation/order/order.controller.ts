@@ -16,6 +16,8 @@ import {
   CreateOrderResponseDto,
   ProcessPaymentRequestDto,
   ProcessPaymentResponseDto,
+  GetOrdersQueryDto,
+  GetOrdersResponseDto,
 } from './dto';
 
 /**
@@ -76,5 +78,27 @@ export class OrderController {
       dto.userId,
       dto.userCouponId,
     );
+  }
+
+  /**
+   * 주문 내역 조회 (US-012)
+   */
+  @Get('users/:userId')
+  @ApiOperation({
+    summary: '주문 내역 조회',
+    description: '사용자의 주문 내역을 조회합니다.',
+  })
+  @ApiParam({ name: 'userId', description: '사용자 ID' })
+  @ApiResponse({
+    status: 200,
+    description: '주문 내역 조회 성공',
+    type: GetOrdersResponseDto,
+  })
+  @ApiResponse({ status: 404, description: '사용자를 찾을 수 없음' })
+  async getOrdersByUser(
+    @Param('userId', ParseIntPipe) userId: number,
+    @Query() query: GetOrdersQueryDto,
+  ): Promise<GetOrdersResponseDto> {
+    return this.orderService.getOrdersByUser(userId, query.status);
   }
 }

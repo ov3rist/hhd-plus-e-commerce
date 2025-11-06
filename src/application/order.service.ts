@@ -15,6 +15,9 @@ import {
   CreateOrderResponseDto,
   OrderItemResponseDto,
   ProcessPaymentResponseDto,
+  GetOrdersResponseDto,
+  OrderDto,
+  OrderItemDetailDto,
 } from '@presentation/order/dto';
 import { DomainException } from '@domain/common/exceptions';
 import { ErrorCode } from '@domain/common/constants/error-code';
@@ -216,5 +219,61 @@ export class OrderService {
       remainingBalance: user.balance,
       paidAt: savedOrder.paidAt!,
     };
+  }
+
+  /**
+   * 주문 내역 조회 (US-012)
+   */
+  async getOrdersByUser(
+    userId: number,
+    statusFilter?: string,
+  ): Promise<GetOrdersResponseDto> {
+    let orders = await this.orderRepository.findByUserId(userId);
+
+    // 상태 필터링 (선택적)
+    if (statusFilter) {
+      orders = orders.filter((order) => order.status.value === statusFilter);
+    }
+
+    const orderDtos: OrderDto[] = await Promise.all(
+      orders.map(async (order) => {
+        const orderItems = await this.orderItemRepository.findByOrderId(
+          order.id,
+        );
+
+        const items: OrderItemDetailDto[] = await Promise.all(
+          orderItems.map(async (item) => {
+            const productOption = await this.productOptionRepository.findById(
+              item.productOptionId,
+            );
+            if (!productOption) {
+              throw new DomainException(ErrorCode.PRODUCT_OPTION_NOT_FOUND);
+            }
+
+            return {
+              productId: productOption.productId,
+              productName: item.productName,
+              productOptionId: item.productOptionId,
+              price: item.price,
+              quantity: item.quantity,
+              subtotal: item.subtotal,
+            };
+          }),
+        );
+
+        return {
+          orderId: order.id,
+          items,
+          totalAmount: order.totalAmount,
+          discountAmount: order.discountAmount,
+          finalAmount: order.finalAmount,
+          status: order.status.value,
+          createdAt: order.createdAt,
+          paidAt: order.paidAt,
+        };
+      }),
+    );
+
+    return { orders: orderDtos };
   }
 }
