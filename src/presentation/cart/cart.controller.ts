@@ -74,4 +74,28 @@ export class CartController {
   ): Promise<GetCartResponseDto> {
     return this.cartService.getCart(userId);
   }
+
+  /**
+   * 장바구니 상품 삭제 (US-007)
+   */
+  @Delete(':cartItemId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: '장바구니 상품 삭제',
+    description: '장바구니에서 특정 상품을 삭제합니다.',
+  })
+  @ApiParam({ name: 'userId', description: '사용자 ID' })
+  @ApiParam({ name: 'cartItemId', description: '장바구니 항목 ID' })
+  @ApiResponse({
+    status: 204,
+    description: '장바구니 항목 삭제 완료',
+  })
+  @ApiResponse({ status: 404, description: '장바구니 항목을 찾을 수 없음' })
+  @ApiResponse({ status: 403, description: '권한 없음' })
+  async removeFromCart(
+    @Param('userId', ParseIntPipe) userId: number,
+    @Param('cartItemId', ParseIntPipe) cartItemId: number,
+  ): Promise<void> {
+    await this.cartService.removeFromCart(userId, cartItemId);
+  }
 }

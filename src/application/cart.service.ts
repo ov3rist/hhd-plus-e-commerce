@@ -123,4 +123,20 @@ export class CartService {
       totalAmount,
     };
   }
+
+  /**
+   * 장바구니 상품 삭제 (US-007)
+   */
+  async removeFromCart(userId: number, cartItemId: number): Promise<void> {
+    const cartItem = await this.cartRepository.findById(cartItemId);
+    if (!cartItem) {
+      throw new DomainException(ErrorCode.CART_ITEM_NOT_FOUND);
+    }
+
+    if (cartItem.userId !== userId) {
+      throw new DomainException(ErrorCode.UNAUTHORIZED_CART_ACCESS);
+    }
+
+    await this.cartRepository.deleteById(cartItemId);
+  }
 }
