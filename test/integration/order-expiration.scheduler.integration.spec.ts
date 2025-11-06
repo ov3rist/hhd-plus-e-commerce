@@ -1,0 +1,121 @@
+import { OrderExpirationScheduler } from '@infrastructure/schedulers/order-expiration.scheduler';
+import {
+  OrderRepository,
+  OrderItemRepository,
+  ProductRepository,
+  ProductOptionRepository,
+  UserRepository,
+} from '@infrastructure/repositories';
+import { Order } from '@domain/order/order.entity';
+import { OrderItem } from '@domain/order/order-item.entity';
+import { Product } from '@domain/product/product.entity';
+import { ProductOption } from '@domain/product/product-option.entity';
+import { User } from '@domain/user/user.entity';
+import { OrderStatus } from '@domain/order/order-status';
+
+describe('OrderExpirationScheduler Integration Tests', () => {
+  let scheduler: OrderExpirationScheduler;
+  let orderRepository: OrderRepository;
+  let orderItemRepository: OrderItemRepository;
+  let productRepository: ProductRepository;
+  let productOptionRepository: ProductOptionRepository;
+  let userRepository: UserRepository;
+
+  beforeEach(() => {
+    orderRepository = new OrderRepository();
+    orderItemRepository = new OrderItemRepository(orderRepository);
+    productRepository = new ProductRepository();
+    productOptionRepository = new ProductOptionRepository();
+    userRepository = new UserRepository();
+
+    scheduler = new OrderExpirationScheduler(
+      orderRepository,
+      orderItemRepository,
+      productOptionRepository,
+    );
+  });
+
+  describe('10분 만료 재고 해제', () => {
+    it('10분 경과한 PENDING 주문의 재고가 자동 해제된다', async () => {
+      // Given: 10분 전에 생성된 주문
+      const user = await userRepository.save(
+        new User(0, 100000, new Date(), new Date()),
+      );
+
+      const product = await productRepository.save(
+        new Product(
+          0,
+          '상품',
+          '설명',
+          10000,
+          '의류',
+          true,
+          new Date(),
+          new Date(),
+        ),
+      );
+
+      const productOption = await productOptionRepository.save(
+        new ProductOption(
+          0,
+          product.id,
+          'RED',
+          'M',
+          100,
+          0,
+          new Date(),
+          new Date(),
+        ),
+      );
+
+      // 재고 선점
+      productOption.reserveStock(10);
+      await productOptionRepository.save(productOption);
+
+      // 11분 전 주문 생성 (만료됨)
+      const pastTime = new Date(Date.now() - 11 * 60 * 1000);
+      const expiredTime = new Date(pastTime.getTime() + 10 * 60 * 1000);
+      const order = await orderRepository.save(
+        new Order(
+          0,
+          user.id,
+          null,
+          10000,
+          0,
+          10000,
+          OrderStatus.PENDING,
+          pastTime,
+          null,
+          expiredTime,
+          pastTime,
+        ),
+      );
+
+      await orderItemRepository.save(
+        new OrderItem(
+          0,
+          order.id,
+          productOption.id,
+          '상품',
+          10000,
+          10,
+          100000,
+          new Date(),
+        ),
+      );
+
+      // When: 스케줄러 실행
+      await scheduler.releaseExpiredOrders();
+
+      // Then: 주문 상태 EXPIRED, 재고 복원
+      const updatedOrder = await orderRepository.findById(order.id);
+      expect(updatedOrder!.status.isExpired()).toBe(true);
+
+      const updatedOption = await productOptionRepository.findById(
+        productOption.id,
+      );
+      expect(updatedOption!.stock).toBe(100); // 복원됨
+      expect(updatedOption!.reservedStock).toBe(0); // 선점 해제됨
+    });
+  });
+});
