@@ -11,7 +11,11 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { CartService } from '@application/cart.service';
-import { AddToCartRequestDto, AddToCartResponseDto } from './dto';
+import {
+  AddToCartRequestDto,
+  AddToCartResponseDto,
+  GetCartResponseDto,
+} from './dto';
 
 /**
  * Cart Controller
@@ -48,5 +52,26 @@ export class CartController {
       dto.productOptionId,
       dto.quantity,
     );
+  }
+
+  /**
+   * 장바구니 조회 (US-006)
+   */
+  @Get()
+  @ApiOperation({
+    summary: '장바구니 조회',
+    description: '장바구니에 담긴 상품 목록을 조회합니다.',
+  })
+  @ApiParam({ name: 'userId', description: '사용자 ID' })
+  @ApiResponse({
+    status: 200,
+    description: '장바구니 조회 성공',
+    type: GetCartResponseDto,
+  })
+  @ApiResponse({ status: 404, description: '사용자를 찾을 수 없음' })
+  async getCart(
+    @Param('userId', ParseIntPipe) userId: number,
+  ): Promise<GetCartResponseDto> {
+    return this.cartService.getCart(userId);
   }
 }

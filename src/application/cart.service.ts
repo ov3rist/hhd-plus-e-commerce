@@ -77,4 +77,50 @@ export class CartService {
       quantity: savedItem.quantity,
     };
   }
+
+  /**
+   * 장바구니 조회 (US-006)
+   */
+  async getCart(userId: number): Promise<GetCartResponseDto> {
+    const cartItems = await this.cartRepository.findByUserId(userId);
+
+    const items: CartItemDto[] = await Promise.all(
+      cartItems.map(async (cartItem) => {
+        const productOption = await this.productOptionRepository.findById(
+          cartItem.productOptionId,
+        );
+        if (!productOption) {
+          throw new DomainException(ErrorCode.PRODUCT_OPTION_NOT_FOUND);
+        }
+
+        const product = await this.productRepository.findById(
+          productOption.productId,
+        );
+        if (!product) {
+          throw new DomainException(ErrorCode.PRODUCT_NOT_FOUND);
+        }
+
+        const subtotal = product.price * cartItem.quantity;
+
+        return {
+          cartItemId: cartItem.id,
+          productId: product.id,
+          productName: product.name,
+          productOptionId: productOption.id,
+          optionColor: productOption.color,
+          optionSize: productOption.size,
+          price: product.price,
+          quantity: cartItem.quantity,
+          subtotal,
+        };
+      }),
+    );
+
+    const totalAmount = items.reduce((sum, item) => sum + item.subtotal, 0);
+
+    return {
+      items,
+      totalAmount,
+    };
+  }
 }
