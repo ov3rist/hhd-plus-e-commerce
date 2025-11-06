@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { ICouponRepository, IUserCouponRepository } from './interfaces';
 import { UserCoupon } from '@domain/coupon/user-coupon.entity';
-import { IssueCouponResponseDto } from '@presentation/coupon/dto';
+import {
+  IssueCouponResponseDto,
+  GetUserCouponsResponseDto,
+  CouponDto,
+} from '@presentation/coupon/dto';
 import { DomainException } from '@domain/common/exceptions';
 import { ErrorCode } from '@domain/common/constants/error-code';
 
@@ -53,5 +57,47 @@ export class CouponService {
       expiresAt: savedUserCoupon.expiredAt,
       remainingQuantity: savedCoupon.getRemainingQuantity(),
     };
+  }
+
+  /**
+   * 보유 쿠폰 조회 (US-014)
+   */
+  async getUserCoupons(
+    userId: number,
+    statusFilter?: string,
+  ): Promise<GetUserCouponsResponseDto> {
+    const userCoupons = await this.userCouponRepository.findByUserId(userId);
+
+    // 상태 필터링 (선택적)
+    let filteredCoupons = userCoupons;
+    if (statusFilter) {
+      filteredCoupons = userCoupons.filter(
+        (uc) => uc.getStatus() === statusFilter,
+      );
+    }
+
+    const couponDtos: CouponDto[] = await Promise.all(
+      filteredCoupons.map(async (userCoupon) => {
+        const coupon = await this.couponRepository.findById(
+          userCoupon.couponId,
+        );
+        if (!coupon) {
+          throw new DomainException(ErrorCode.COUPON_INFO_NOT_FOUND);
+        }
+
+        return {
+          userCouponId: userCoupon.id,
+          couponId: userCoupon.couponId,
+          couponName: coupon.name,
+          discountRate: coupon.discountRate,
+          status: userCoupon.getStatus(),
+          expiresAt: userCoupon.expiredAt,
+          issuedAt: userCoupon.createdAt,
+          usedAt: userCoupon.usedAt,
+        };
+      }),
+    );
+
+    return { coupons: couponDtos };
   }
 }
