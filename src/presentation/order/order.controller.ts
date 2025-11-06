@@ -11,7 +11,12 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { OrderService } from '@application/order.service';
-import { CreateOrderRequestDto, CreateOrderResponseDto } from './dto';
+import {
+  CreateOrderRequestDto,
+  CreateOrderResponseDto,
+  ProcessPaymentRequestDto,
+  ProcessPaymentResponseDto,
+} from './dto';
 
 /**
  * Order Controller
@@ -42,5 +47,34 @@ export class OrderController {
     @Body() dto: CreateOrderRequestDto,
   ): Promise<CreateOrderResponseDto> {
     return this.orderService.createOrder(dto.userId, dto.items);
+  }
+
+  /**
+   * 결제 처리 (US-009)
+   */
+  @Post(':orderId/payment')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: '결제 처리',
+    description: '주문에 대한 결제를 처리합니다.',
+  })
+  @ApiParam({ name: 'orderId', description: '주문 ID' })
+  @ApiResponse({
+    status: 200,
+    description: '결제 완료',
+    type: ProcessPaymentResponseDto,
+  })
+  @ApiResponse({ status: 400, description: '잔액 부족 또는 주문서 만료' })
+  @ApiResponse({ status: 403, description: '권한 없음' })
+  @ApiResponse({ status: 404, description: '주문을 찾을 수 없음' })
+  async processPayment(
+    @Param('orderId', ParseIntPipe) orderId: number,
+    @Body() dto: ProcessPaymentRequestDto,
+  ): Promise<ProcessPaymentResponseDto> {
+    return this.orderService.processPayment(
+      orderId,
+      dto.userId,
+      dto.userCouponId,
+    );
   }
 }

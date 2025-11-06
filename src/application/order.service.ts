@@ -14,6 +14,7 @@ import { OrderItem } from '@domain/order/order-item.entity';
 import {
   CreateOrderResponseDto,
   OrderItemResponseDto,
+  ProcessPaymentResponseDto,
 } from '@presentation/order/dto';
 import { DomainException } from '@domain/common/exceptions';
 import { ErrorCode } from '@domain/common/constants/error-code';
@@ -123,6 +124,97 @@ export class OrderService {
       status: savedOrder.status.value,
       createdAt: savedOrder.createdAt,
       expiresAt: savedOrder.expiredAt,
+    };
+  }
+
+  /**
+   * 결제 처리 (US-009)
+   * 잔액 차감, 재고 확정, 쿠폰 사용 처리
+   */
+  async processPayment(
+    orderId: number,
+    userId: number,
+    userCouponId?: number,
+  ): Promise<ProcessPaymentResponseDto> {
+    // 주문 조회
+    const order = await this.orderRepository.findById(orderId);
+    if (!order) {
+      throw new DomainException(ErrorCode.ORDER_NOT_FOUND);
+    }
+
+    if (!order.isOwnedBy(userId)) {
+      throw new DomainException(ErrorCode.UNAUTHORIZED_ORDER_ACCESS);
+    }
+
+    // 결제 가능 여부 확인
+    if (!order.canPay()) {
+      throw new DomainException(ErrorCode.INVALID_ORDER_STATUS);
+    }
+
+    // 쿠폰 적용
+    let finalAmount = order.totalAmount;
+    if (userCouponId) {
+      const userCoupon = await this.userCouponRepository.findById(userCouponId);
+      if (!userCoupon) {
+        throw new DomainException(ErrorCode.COUPON_NOT_FOUND);
+      }
+
+      const coupon = await this.couponRepository.findById(userCoupon.couponId);
+      if (!coupon) {
+        throw new DomainException(ErrorCode.COUPON_INFO_NOT_FOUND);
+      }
+
+      if (userId !== userCoupon.userId) {
+        throw new DomainException(ErrorCode.UNAUTHORIZED_ORDER_ACCESS);
+      }
+
+      // 쿠폰 사용 가능 여부 확인
+      userCoupon.use(order.id);
+      await this.userCouponRepository.save(userCoupon);
+
+      // 할인 금액 계산
+      const discountAmount = coupon.calculateDiscount(order.totalAmount);
+      finalAmount = order.totalAmount - discountAmount;
+
+      order.discountAmount = discountAmount;
+      order.finalAmount = finalAmount;
+      order.couponId = coupon.id;
+    }
+
+    // 사용자 잔액 차감
+    const user = await this.userRepository.findById(userId);
+    if (!user) {
+      throw new DomainException(ErrorCode.USER_NOT_FOUND);
+    }
+
+    const balanceLog = user.deduct(finalAmount, '주문 결제', order.id);
+    await this.userRepository.save(user);
+    await this.balanceLogRepository.save(balanceLog);
+
+    // 재고 확정 차감 (선점 해제)
+    const orderItems = await this.orderItemRepository.findByOrderId(order.id);
+    for (const orderItem of orderItems) {
+      const productOption = await this.productOptionRepository.findById(
+        orderItem.productOptionId,
+      );
+      if (!productOption) {
+        throw new DomainException(ErrorCode.PRODUCT_OPTION_NOT_FOUND);
+      }
+
+      productOption.decreaseStock(orderItem.quantity);
+      await this.productOptionRepository.save(productOption);
+    }
+
+    // 주문 상태 업데이트
+    order.pay();
+    const savedOrder = await this.orderRepository.save(order);
+
+    return {
+      orderId: savedOrder.id,
+      status: savedOrder.status.value,
+      paidAmount: finalAmount,
+      remainingBalance: user.balance,
+      paidAt: savedOrder.paidAt!,
     };
   }
 }
