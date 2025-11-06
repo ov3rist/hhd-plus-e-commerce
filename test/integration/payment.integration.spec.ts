@@ -1,0 +1,172 @@
+import { OrderService } from '@application/order.service';
+import {
+  OrderRepository,
+  OrderItemRepository,
+  ProductRepository,
+  ProductOptionRepository,
+  UserRepository,
+  UserBalanceChangeLogRepository,
+  CouponRepository,
+  UserCouponRepository,
+} from '@infrastructure/repositories';
+import { Product } from '@domain/product/product.entity';
+import { ProductOption } from '@domain/product/product-option.entity';
+import { User } from '@domain/user/user.entity';
+
+describe('결제 처리 통합 테스트 (US-009)', () => {
+  let orderService: OrderService;
+  let orderRepository: OrderRepository;
+  let productRepository: ProductRepository;
+  let productOptionRepository: ProductOptionRepository;
+  let userRepository: UserRepository;
+
+  beforeEach(() => {
+    orderRepository = new OrderRepository();
+    const orderItemRepository = new OrderItemRepository(orderRepository);
+    productRepository = new ProductRepository();
+    productOptionRepository = new ProductOptionRepository();
+    userRepository = new UserRepository();
+    const balanceLogRepository = new UserBalanceChangeLogRepository();
+    const couponRepository = new CouponRepository();
+    const userCouponRepository = new UserCouponRepository();
+
+    orderService = new OrderService(
+      orderRepository,
+      orderItemRepository,
+      productRepository,
+      productOptionRepository,
+      userRepository,
+      balanceLogRepository,
+      couponRepository,
+      userCouponRepository,
+    );
+  });
+
+  describe('결제 처리 동시성', () => {
+    it('동시에 여러 주문 결제 시 잔액과 재고가 정확히 처리된다', async () => {
+      // Given: 3명의 사용자, 각 잔액 500,000원
+      const users = await Promise.all(
+        Array.from({ length: 3 }, () =>
+          userRepository.save(new User(0, 500000, new Date(), new Date())),
+        ),
+      );
+
+      const product = await productRepository.save(
+        new Product(
+          0,
+          '상품',
+          '설명',
+          20000,
+          '의류',
+          true,
+          new Date(),
+          new Date(),
+        ),
+      );
+
+      const productOption = await productOptionRepository.save(
+        new ProductOption(
+          0,
+          product.id,
+          'BLUE',
+          'L',
+          100,
+          0,
+          new Date(),
+          new Date(),
+        ),
+      );
+
+      // When: 3명이 각각 주문 생성 (재고 선점)
+      const orders = await Promise.all(
+        users.map((user) =>
+          orderService.createOrder(user.id, [
+            { productOptionId: productOption.id, quantity: 10 },
+          ]),
+        ),
+      );
+
+      // When: 3명이 동시에 결제 (잔액 차감 + 재고 확정)
+      await Promise.all(
+        orders.map((order, idx) =>
+          orderService.processPayment(order.orderId, users[idx].id),
+        ),
+      );
+
+      // Then: 잔액 정확히 차감 (500,000 - 200,000 = 300,000)
+      for (const user of users) {
+        const updatedUser = await userRepository.findById(user.id);
+        expect(updatedUser!.balance).toBe(300000);
+      }
+
+      // Then: 재고 정확히 확정 차감 (100 - 30 = 70)
+      const finalOption = await productOptionRepository.findById(
+        productOption.id,
+      );
+      expect(finalOption!.stock).toBe(70);
+      expect(finalOption!.reservedStock).toBe(0);
+    });
+
+    it('결제 실패 시 잔액은 차감되지 않고 재고는 선점 상태로 유지된다', async () => {
+      // Given: 충분한 잔액으로 주문 생성
+      const user = await userRepository.save(
+        new User(0, 100000, new Date(), new Date()),
+      );
+
+      const product = await productRepository.save(
+        new Product(
+          0,
+          '고가 상품',
+          '설명',
+          50000,
+          '전자제품',
+          true,
+          new Date(),
+          new Date(),
+        ),
+      );
+
+      const productOption = await productOptionRepository.save(
+        new ProductOption(
+          0,
+          product.id,
+          'BLACK',
+          'XL',
+          10,
+          0,
+          new Date(),
+          new Date(),
+        ),
+      );
+
+      // When: 주문 생성 (재고 선점 성공)
+      const order = await orderService.createOrder(user.id, [
+        { productOptionId: productOption.id, quantity: 1 },
+      ]);
+
+      // Given: 잔액을 부족하게 만듦 (다른 주문으로 소진)
+      const userForDeduct = await userRepository.findById(user.id);
+      userForDeduct!.deduct(90000, '테스트 차감', 999);
+      await userRepository.save(userForDeduct!);
+
+      // When: 결제 시도 (잔액 부족으로 실패)
+      await expect(
+        orderService.processPayment(order.orderId, user.id),
+      ).rejects.toThrow();
+
+      // Then: 잔액은 10,000원 유지
+      const finalUser = await userRepository.findById(user.id);
+      expect(finalUser!.balance).toBe(10000);
+
+      // Then: 재고는 선점 상태 유지 (결제 실패했으므로 확정 차감 안됨)
+      const finalOption = await productOptionRepository.findById(
+        productOption.id,
+      );
+      expect(finalOption!.reservedStock).toBe(1); // 선점 상태 유지
+
+      // Then: 주문 상태는 PENDING 유지
+      const finalOrder = await orderRepository.findById(order.orderId);
+      expect(finalOrder!.status.isPending()).toBe(true);
+    });
+  });
+});
