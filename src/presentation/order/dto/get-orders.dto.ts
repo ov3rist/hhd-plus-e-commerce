@@ -87,3 +87,35 @@ export class GetOrdersResponseDto {
   })
   orders: OrderDto[];
 }
+
+/**
+ * 주문 상세 조회 응답 DTO
+ */
+export class GetOrderDetailResponseDto {
+  @ApiProperty({ description: '주문 ID' })
+  orderId: number;
+
+  @ApiProperty({ description: '사용자 ID' })
+  userId: number;
+
+  @ApiProperty({ description: '주문 항목 목록', type: [OrderItemDetailDto] })
+  items: OrderItemDetailDto[];
+
+  @ApiProperty({ description: '총 주문 금액' })
+  totalAmount: number;
+
+  @ApiProperty({ description: '할인 금액' })
+  discountAmount: number;
+
+  @ApiProperty({ description: '최종 결제 금액' })
+  finalAmount: number;
+
+  @ApiProperty({ description: '주문 상태' })
+  status: string;
+
+  @ApiProperty({ description: '주문 생성 시각' })
+  createdAt: Date;
+
+  @ApiProperty({ description: '결제 완료 시각', nullable: true })
+  paidAt: Date | null;
+}

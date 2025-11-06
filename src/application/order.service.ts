@@ -18,6 +18,7 @@ import {
   GetOrdersResponseDto,
   OrderDto,
   OrderItemDetailDto,
+  GetOrderDetailResponseDto,
 } from '@presentation/order/dto';
 import { DomainException } from '@domain/common/exceptions';
 import { ErrorCode } from '@domain/common/constants/error-code';
@@ -275,5 +276,49 @@ export class OrderService {
     );
 
     return { orders: orderDtos };
+  }
+
+  /**
+   * 주문 상세 조회
+   */
+  async getOrderDetail(orderId: number): Promise<GetOrderDetailResponseDto> {
+    const order = await this.orderRepository.findById(orderId);
+    if (!order) {
+      throw new DomainException(ErrorCode.ORDER_NOT_FOUND);
+    }
+
+    const orderItems = await this.orderItemRepository.findByOrderId(orderId);
+
+    const items: OrderItemDetailDto[] = await Promise.all(
+      orderItems.map(async (item) => {
+        const productOption = await this.productOptionRepository.findById(
+          item.productOptionId,
+        );
+        if (!productOption) {
+          throw new DomainException(ErrorCode.PRODUCT_OPTION_NOT_FOUND);
+        }
+
+        return {
+          productId: productOption.productId,
+          productName: item.productName,
+          productOptionId: item.productOptionId,
+          price: item.price,
+          quantity: item.quantity,
+          subtotal: item.subtotal,
+        };
+      }),
+    );
+
+    return {
+      orderId: order.id,
+      userId: order.userId,
+      items,
+      totalAmount: order.totalAmount,
+      discountAmount: order.discountAmount,
+      finalAmount: order.finalAmount,
+      status: order.status.value,
+      createdAt: order.createdAt,
+      paidAt: order.paidAt,
+    };
   }
 }
