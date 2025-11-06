@@ -35,7 +35,6 @@ export class ProductController {
 
   /**
    * 상위 상품 조회 (US-003)
-   * TODO: 구현 필요
    */
   @Get('top')
   @ApiOperation({
@@ -48,7 +47,6 @@ export class ProductController {
     type: GetTopProductsResponseDto,
   })
   async getTopProducts(): Promise<GetTopProductsResponseDto> {
-    // TODO: 서비스 메서드 구현 후 연결
     return await this.productService.getTopProducts();
   }
 

@@ -19,4 +19,5 @@ export abstract class IOrderItemRepository {
   abstract findByOrderId(orderId: number): Promise<OrderItem[]>;
   abstract save(orderItem: OrderItem): Promise<OrderItem>;
   abstract saveAll(orderItems: OrderItem[]): Promise<OrderItem[]>;
+  abstract findRecentOrderItems(days: number): Promise<OrderItem[]>;
 }

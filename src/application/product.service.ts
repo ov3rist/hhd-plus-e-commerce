@@ -79,17 +79,20 @@ export class ProductService {
   /**
    * 상위 상품 조회 (US-003)
    * 최근 3일간 가장 많이 팔린 상위 5개 상품 목록 조회
-   * TODO: 구현 필요
    */
   async getTopProducts(): Promise<GetTopProductsResponseDto> {
-    // TODO: ProductPopularitySnapshot 엔티티를 활용하여
-    // 최근 3일간의 스냅샷 데이터에서 판매량 기준 상위 5개 상품을 조회
-    // 1. 최근 3일간의 스냅샷 데이터 조회
-    // 2. 상품별 판매량 집계
-    // 3. 판매량 기준 내림차순 정렬
-    // 4. 상위 5개 상품 반환
-    // 5. TopProductDto[] 형식으로 매핑
-    // 6. GetTopProductsResponseDto 반환 (products, createdAt)
-    throw new Error('Not implemented');
+    const snapshots = await this.productRepository.findTopProducts();
+
+    const products: TopProductDto[] = snapshots.map((s) => ({
+      rank: s.rank,
+      productId: s.productId,
+      name: s.productName,
+      price: s.price,
+      category: s.category,
+      salesCount: s.salesCount,
+      lastSoldAt: s.lastSoldAt || new Date(),
+    }));
+
+    return { products, createdAt: new Date() };
   }
 }
