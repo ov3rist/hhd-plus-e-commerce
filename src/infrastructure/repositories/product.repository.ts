@@ -5,7 +5,6 @@ import {
 } from '@application/interfaces';
 import { Product } from '@domain/product/product.entity';
 import { ProductOption } from '@domain/product/product-option.entity';
-import { MutexManager } from '@infrastructure/common/mutex-manager';
 
 /**
  * Product Repository Implementation (In-Memory)
@@ -52,13 +51,11 @@ export class ProductRepository implements IProductRepository {
 
 /**
  * ProductOption Repository Implementation (In-Memory)
- * 동시성 제어: 상품 옵션별 재고 변경 시 Mutex를 통한 직렬화 보장
  */
 @Injectable()
 export class ProductOptionRepository implements IProductOptionRepository {
   private productOptions: Map<number, ProductOption> = new Map();
   private currentId = 1;
-  private readonly mutexManager = new MutexManager();
 
   async findById(id: number): Promise<ProductOption | null> {
     return this.productOptions.get(id) || null;
@@ -77,29 +74,22 @@ export class ProductOptionRepository implements IProductOptionRepository {
   }
 
   async save(productOption: ProductOption): Promise<ProductOption> {
-    const optionId = productOption.id || 0;
-    const unlock = await this.mutexManager.acquire(optionId);
-
-    try {
-      if (productOption.id === 0) {
-        const newOption = new ProductOption(
-          this.currentId++,
-          productOption.productId,
-          productOption.color,
-          productOption.size,
-          productOption.stock,
-          productOption.reservedStock,
-          productOption.createdAt,
-          productOption.updatedAt,
-        );
-        this.productOptions.set(newOption.id, newOption);
-        return newOption;
-      }
-
-      this.productOptions.set(productOption.id, productOption);
-      return productOption;
-    } finally {
-      unlock();
+    if (productOption.id === 0) {
+      const newOption = new ProductOption(
+        this.currentId++,
+        productOption.productId,
+        productOption.color,
+        productOption.size,
+        productOption.stock,
+        productOption.reservedStock,
+        productOption.createdAt,
+        productOption.updatedAt,
+      );
+      this.productOptions.set(newOption.id, newOption);
+      return newOption;
     }
+
+    this.productOptions.set(productOption.id, productOption);
+    return productOption;
   }
 }

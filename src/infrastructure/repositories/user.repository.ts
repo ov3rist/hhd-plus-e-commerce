@@ -5,44 +5,33 @@ import {
 } from '@application/interfaces';
 import { User } from '@domain/user/user.entity';
 import { UserBalanceChangeLog } from '@domain/user/user-balance-change-log.entity';
-import { MutexManager } from '@infrastructure/common/mutex-manager';
 
 /**
  * User Repository Implementation (In-Memory)
- * 동시성 제어: 사용자별 잔액 변경 시 Mutex를 통한 직렬화 보장
  */
 @Injectable()
 export class UserRepository implements IUserRepository {
   private users: Map<number, User> = new Map();
   private currentId = 1;
-  private readonly mutexManager = new MutexManager();
 
   async findById(id: number): Promise<User | null> {
     return this.users.get(id) || null;
   }
 
   async save(user: User): Promise<User> {
-    const userId = user.id || 0;
-    const unlock = await this.mutexManager.acquire(userId);
-
-    try {
-      if (user.id === 0) {
-        // 신규 사용자 생성
-        const newUser = new User(
-          this.currentId++,
-          user.balance,
-          user.createdAt,
-          user.updatedAt,
-        );
-        this.users.set(newUser.id, newUser);
-        return newUser;
-      }
-
-      this.users.set(user.id, user);
-      return user;
-    } finally {
-      unlock();
+    if (user.id === 0) {
+      const newUser = new User(
+        this.currentId++,
+        user.balance,
+        user.createdAt,
+        user.updatedAt,
+      );
+      this.users.set(newUser.id, newUser);
+      return newUser;
     }
+
+    this.users.set(user.id, user);
+    return user;
   }
 }
 
