@@ -7,10 +7,18 @@ import {
   CartModule,
   OrderModule,
   CouponModule,
+  SchedulerModule,
 } from '@infrastructure/modules';
 
 @Module({
-  imports: [ProductModule, UserModule, CartModule, OrderModule, CouponModule],
+  imports: [
+    ProductModule,
+    UserModule,
+    CartModule,
+    OrderModule,
+    CouponModule,
+    SchedulerModule,
+  ],
   controllers: [AppController],
   providers: [AppService],
 })

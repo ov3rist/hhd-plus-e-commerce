@@ -23,7 +23,6 @@ export class CouponService {
   /**
    * 쿠폰 발급 (US-013)
    * 선착순으로 쿠폰을 발급
-   * TODO: 동시성 처리 구현 필요
    */
   async issueCoupon(
     userId: number,

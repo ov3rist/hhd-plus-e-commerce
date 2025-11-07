@@ -1,5 +1,6 @@
 import { Product } from '@domain/product/product.entity';
 import { ProductOption } from '@domain/product/product-option.entity';
+import { ProductPopularitySnapshot } from '@domain/product/product-popularity-snapshot.entity';
 
 /**
  * Product Repository Port
@@ -10,6 +11,7 @@ export abstract class IProductRepository {
   abstract findAll(): Promise<Product[]>;
   abstract findByIds(ids: number[]): Promise<Product[]>;
   abstract save(product: Product): Promise<Product>;
+  abstract findTopProducts(): Promise<ProductPopularitySnapshot[]>;
 }
 
 /**

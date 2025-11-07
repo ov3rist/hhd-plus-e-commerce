@@ -28,8 +28,10 @@
     "@nestjs/common": "^11.1.8",
     "@nestjs/core": "^11.1.8",
     "@nestjs/platform-express": "^11.1.8",
+    "@nestjs/schedule": "^6.0.1",
     "@nestjs/swagger": "^11.2.1",
     "@nestjs/terminus": "^11.0.0",
+    "async-mutex": "^0.5.0",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "raw-body": "^2.5.2",
@@ -83,7 +85,14 @@
     ],
     "coverageDirectory": "./coverage",
     "testEnvironment": "node",
-    "testResultsProcessor": "jest-sonar-reporter"
+    "testResultsProcessor": "jest-sonar-reporter",
+    "moduleNameMapper": {
+      "^@domain/(.*)$": "<rootDir>/src/domain/$1",
+      "^@application/(.*)$": "<rootDir>/src/application/$1",
+      "^@infrastructure/(.*)$": "<rootDir>/src/infrastructure/$1",
+      "^@presentation/(.*)$": "<rootDir>/src/presentation/$1",
+      "^@common/(.*)$": "<rootDir>/src/common/$1"
+    }
   },
   "jestSonar": {
     "reportPath": "../coverage",
