@@ -5,7 +5,6 @@ import {
   IProductRepository,
   IProductOptionRepository,
 } from '@application/interfaces';
-import { ProductRepository } from '@infrastructure/repositories';
 import { ProductPopularitySnapshot } from '@domain/product/product-popularity-snapshot.entity';
 
 /**
@@ -20,7 +19,7 @@ export class ProductPopularityScheduler {
 
   constructor(
     private readonly orderItemRepository: IOrderItemRepository,
-    private readonly productRepository: ProductRepository,
+    private readonly productRepository: IProductRepository,
     private readonly productOptionRepository: IProductOptionRepository,
   ) {}
 
@@ -130,7 +129,8 @@ export class ProductPopularityScheduler {
 
       // 현재 시간의 스냅샷만 저장 (이전 스냅샷은 유지)
       const now = new Date();
-      topProducts.forEach((product, index) => {
+      for (let index = 0; index < topProducts.length; index++) {
+        const product = topProducts[index];
         const snapshot = new ProductPopularitySnapshot(
           this.snapshotId++,
           product.productId,
@@ -142,8 +142,8 @@ export class ProductPopularityScheduler {
           product.lastSoldAt,
           now,
         );
-        this.productRepository.snapshots.set(snapshot.id, snapshot);
-      });
+        await this.productRepository.saveSnapshot(snapshot);
+      }
 
       this.logger.log(
         `인기 상품 스냅샷 업데이트 완료: ${topProducts.length}개`,

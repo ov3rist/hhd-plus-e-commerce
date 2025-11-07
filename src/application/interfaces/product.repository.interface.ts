@@ -12,6 +12,7 @@ export abstract class IProductRepository {
   abstract findByIds(ids: number[]): Promise<Product[]>;
   abstract save(product: Product): Promise<Product>;
   abstract findTopProducts(): Promise<ProductPopularitySnapshot[]>;
+  abstract saveSnapshot(snapshot: ProductPopularitySnapshot): Promise<void>;
 }
 
 /**

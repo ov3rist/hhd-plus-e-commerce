@@ -70,6 +70,10 @@ export class ProductRepository implements IProductRepository {
       .filter((s) => s.createdAt.getTime() === latestCreatedAt.getTime())
       .sort((a, b) => a.rank - b.rank);
   }
+
+  async saveSnapshot(snapshot: ProductPopularitySnapshot): Promise<void> {
+    this.snapshots.set(snapshot.id, snapshot);
+  }
 }
 
 /**
