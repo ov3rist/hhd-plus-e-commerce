@@ -29,40 +29,54 @@ import { OrderController } from '@presentation/order';
 @Module({
   controllers: [OrderController],
   providers: [
+    OrderRepository,
     {
       provide: IOrderRepository,
       useClass: OrderRepository,
     },
+    OrderItemRepository,
     {
       provide: IOrderItemRepository,
       useClass: OrderItemRepository,
     },
+    ProductRepository,
     {
       provide: IProductRepository,
       useClass: ProductRepository,
     },
+    ProductOptionRepository,
     {
       provide: IProductOptionRepository,
       useClass: ProductOptionRepository,
     },
+    UserRepository,
     {
       provide: IUserRepository,
       useClass: UserRepository,
     },
+    UserBalanceChangeLogRepository,
     {
       provide: IUserBalanceChangeLogRepository,
       useClass: UserBalanceChangeLogRepository,
     },
+    CouponRepository,
     {
       provide: ICouponRepository,
       useClass: CouponRepository,
     },
+    UserCouponRepository,
     {
       provide: IUserCouponRepository,
       useClass: UserCouponRepository,
     },
     OrderService,
   ],
-  exports: [OrderService],
+  exports: [
+    OrderService,
+    OrderRepository,
+    OrderItemRepository,
+    IOrderRepository,
+    IOrderItemRepository,
+  ],
 })
 export class OrderModule {}

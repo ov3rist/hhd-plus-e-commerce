@@ -17,6 +17,8 @@ import { ProductController } from '@presentation/product';
 @Module({
   controllers: [ProductController],
   providers: [
+    ProductRepository,
+    ProductOptionRepository,
     {
       provide: IProductRepository,
       useClass: ProductRepository,
@@ -27,6 +29,6 @@ import { ProductController } from '@presentation/product';
     },
     ProductService,
   ],
-  exports: [ProductService],
+  exports: [ProductService, IProductRepository, IProductOptionRepository],
 })
 export class ProductModule {}

@@ -19,6 +19,9 @@ import { CartController } from '@presentation/cart';
 @Module({
   controllers: [CartController],
   providers: [
+    CartRepository,
+    ProductRepository,
+    ProductOptionRepository,
     {
       provide: ICartRepository,
       useClass: CartRepository,

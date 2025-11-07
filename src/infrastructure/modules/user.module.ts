@@ -17,6 +17,8 @@ import { UserController } from '@presentation/user';
 @Module({
   controllers: [UserController],
   providers: [
+    UserRepository,
+    UserBalanceChangeLogRepository,
     {
       provide: IUserRepository,
       useClass: UserRepository,

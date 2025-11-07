@@ -17,6 +17,8 @@ import { CouponController } from '@presentation/coupon';
 @Module({
   controllers: [CouponController],
   providers: [
+    CouponRepository,
+    UserCouponRepository,
     {
       provide: ICouponRepository,
       useClass: CouponRepository,
