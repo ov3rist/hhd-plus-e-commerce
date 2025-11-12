@@ -1,6 +1,6 @@
 import { Controller, Get, Param, ParseIntPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
-import { ProductService } from '@application/product.service';
+import { ProductFacade } from '@application/facades/product.facade';
 import {
   GetProductsResponseDto,
   GetProductDetailResponseDto,
@@ -14,7 +14,7 @@ import {
 @ApiTags('products')
 @Controller('api/products')
 export class ProductController {
-  constructor(private readonly productService: ProductService) {}
+  constructor(private readonly productFacade: ProductFacade) {}
 
   /**
    * 상품 목록 조회 (US-001)
@@ -30,7 +30,7 @@ export class ProductController {
     type: GetProductsResponseDto,
   })
   async getProducts(): Promise<GetProductsResponseDto> {
-    return await this.productService.getProducts();
+    return await this.productFacade.getProducts();
   }
 
   /**
@@ -47,7 +47,7 @@ export class ProductController {
     type: GetTopProductsResponseDto,
   })
   async getTopProducts(): Promise<GetTopProductsResponseDto> {
-    return await this.productService.getTopProducts();
+    return await this.productFacade.getTopProducts();
   }
 
   /**
@@ -68,6 +68,6 @@ export class ProductController {
   async getProductDetail(
     @Param('productId', ParseIntPipe) productId: number,
   ): Promise<GetProductDetailResponseDto> {
-    return await this.productService.getProductDetail(productId);
+    return await this.productFacade.getProductDetail(productId);
   }
 }

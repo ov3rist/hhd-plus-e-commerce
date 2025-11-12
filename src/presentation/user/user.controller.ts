@@ -8,7 +8,7 @@ import {
   ParseIntPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
-import { UserService } from '@application/user.service';
+import { UserFacade } from '@application/facades/user.facade';
 import {
   GetBalanceResponseDto,
   GetBalanceLogsQueryDto,
@@ -24,7 +24,7 @@ import {
 @ApiTags('Users')
 @Controller('api/users')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(private readonly userFacade: UserFacade) {}
 
   /**
    * 잔액 조회 (US-004)
@@ -46,7 +46,7 @@ export class UserController {
   async getBalance(
     @Param('userId', ParseIntPipe) userId: number,
   ): Promise<GetBalanceResponseDto> {
-    return await this.userService.getBalance(userId);
+    return await this.userFacade.getBalance(userId);
   }
 
   /**
@@ -71,11 +71,7 @@ export class UserController {
     @Param('userId', ParseIntPipe) userId: number,
     @Body() dto: ChargeBalanceRequestDto,
   ): Promise<ChargeBalanceResponseDto> {
-    const result = await this.userService.chargeBalance(userId, dto.amount);
-    return {
-      userId: result.user.id,
-      balance: result.user.balance,
-    };
+    return await this.userFacade.chargeBalance(userId, dto.amount);
   }
 
   /**
@@ -109,6 +105,6 @@ export class UserController {
       size: query.size,
     };
 
-    return await this.userService.getBalanceLogs(userId, filter);
+    return await this.userFacade.getBalanceLogs(userId, filter);
   }
 }

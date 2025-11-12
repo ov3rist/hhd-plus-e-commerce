@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
-import { CartService } from '@application/cart.service';
+import { CartFacade } from '@application/facades/cart.facade';
+import { CartDomainService } from '@domain/cart';
 import {
   ICartRepository,
   IProductRepository,
   IProductOptionRepository,
-} from '@application/interfaces';
+} from '@domain/interfaces';
 import {
   CartRepository,
   ProductRepository,
@@ -34,8 +35,9 @@ import { CartController } from '@presentation/cart';
       provide: IProductOptionRepository,
       useClass: ProductOptionRepository,
     },
-    CartService,
+    CartDomainService,
+    CartFacade,
   ],
-  exports: [CartService],
+  exports: [CartFacade],
 })
 export class CartModule {}

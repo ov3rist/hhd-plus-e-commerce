@@ -10,7 +10,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
-import { CartService } from '@application/cart.service';
+import { CartFacade } from '@application/facades/cart.facade';
 import {
   AddToCartRequestDto,
   AddToCartResponseDto,
@@ -24,7 +24,7 @@ import {
 @ApiTags('cart')
 @Controller('api/users/:userId/cart')
 export class CartController {
-  constructor(private readonly cartService: CartService) {}
+  constructor(private readonly cartFacade: CartFacade) {}
 
   /**
    * 장바구니 상품 추가 (US-005)
@@ -47,11 +47,7 @@ export class CartController {
     @Param('userId', ParseIntPipe) userId: number,
     @Body() dto: AddToCartRequestDto,
   ): Promise<AddToCartResponseDto> {
-    return this.cartService.addToCart(
-      userId,
-      dto.productOptionId,
-      dto.quantity,
-    );
+    return this.cartFacade.addToCart(userId, dto.productOptionId, dto.quantity);
   }
 
   /**
@@ -72,7 +68,7 @@ export class CartController {
   async getCart(
     @Param('userId', ParseIntPipe) userId: number,
   ): Promise<GetCartResponseDto> {
-    return this.cartService.getCart(userId);
+    return this.cartFacade.getCart(userId);
   }
 
   /**
@@ -96,6 +92,6 @@ export class CartController {
     @Param('userId', ParseIntPipe) userId: number,
     @Param('cartItemId', ParseIntPipe) cartItemId: number,
   ): Promise<void> {
-    await this.cartService.removeFromCart(userId, cartItemId);
+    await this.cartFacade.removeFromCart(userId, cartItemId);
   }
 }

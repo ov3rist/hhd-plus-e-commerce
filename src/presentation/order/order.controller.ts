@@ -10,7 +10,7 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
-import { OrderService } from '@application/order.service';
+import { OrderFacade } from '@application/facades/order.facade';
 import {
   CreateOrderRequestDto,
   CreateOrderResponseDto,
@@ -28,7 +28,7 @@ import {
 @ApiTags('orders')
 @Controller('api/orders')
 export class OrderController {
-  constructor(private readonly orderService: OrderService) {}
+  constructor(private readonly orderFacade: OrderFacade) {}
 
   /**
    * 주문서 생성 (US-008)
@@ -49,7 +49,7 @@ export class OrderController {
   async createOrder(
     @Body() dto: CreateOrderRequestDto,
   ): Promise<CreateOrderResponseDto> {
-    return this.orderService.createOrder(dto.userId, dto.items);
+    return this.orderFacade.createOrder(dto.userId, dto.items);
   }
 
   /**
@@ -74,7 +74,7 @@ export class OrderController {
     @Param('orderId', ParseIntPipe) orderId: number,
     @Body() dto: ProcessPaymentRequestDto,
   ): Promise<ProcessPaymentResponseDto> {
-    return this.orderService.processPayment(
+    return this.orderFacade.processPayment(
       orderId,
       dto.userId,
       dto.userCouponId,
@@ -100,7 +100,7 @@ export class OrderController {
     @Param('userId', ParseIntPipe) userId: number,
     @Query() query: GetOrdersQueryDto,
   ): Promise<GetOrdersResponseDto> {
-    return this.orderService.getOrdersByUser(userId, query.status);
+    return this.orderFacade.getOrdersByUser(userId, query.status);
   }
 
   /**
@@ -121,6 +121,6 @@ export class OrderController {
   async getOrderDetail(
     @Param('orderId', ParseIntPipe) orderId: number,
   ): Promise<GetOrderDetailResponseDto> {
-    return this.orderService.getOrderDetail(orderId);
+    return this.orderFacade.getOrderDetail(orderId);
   }
 }

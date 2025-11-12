@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
-import { ProductService } from '@application/product.service';
+import { ProductFacade } from '@application/facades/product.facade';
+import { ProductDomainService } from '@domain/product';
 import {
   IProductRepository,
   IProductOptionRepository,
-} from '@application/interfaces';
+} from '@domain/interfaces';
 import {
   ProductRepository,
   ProductOptionRepository,
@@ -27,8 +28,9 @@ import { ProductController } from '@presentation/product';
       provide: IProductOptionRepository,
       useClass: ProductOptionRepository,
     },
-    ProductService,
+    ProductDomainService,
+    ProductFacade,
   ],
-  exports: [ProductService, IProductRepository, IProductOptionRepository],
+  exports: [ProductFacade, IProductRepository, IProductOptionRepository],
 })
 export class ProductModule {}

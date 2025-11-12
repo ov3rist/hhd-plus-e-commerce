@@ -1,5 +1,7 @@
 import { Module } from '@nestjs/common';
-import { OrderService } from '@application/order.service';
+import { OrderFacade } from '@application/facades/order.facade';
+import { OrderDomainService } from '@domain/order';
+import { UserDomainService } from '@domain/user';
 import {
   IOrderRepository,
   IOrderItemRepository,
@@ -9,7 +11,7 @@ import {
   IUserBalanceChangeLogRepository,
   ICouponRepository,
   IUserCouponRepository,
-} from '@application/interfaces';
+} from '@domain/interfaces';
 import {
   OrderRepository,
   OrderItemRepository,
@@ -69,10 +71,12 @@ import { OrderController } from '@presentation/order';
       provide: IUserCouponRepository,
       useClass: UserCouponRepository,
     },
-    OrderService,
+    OrderDomainService,
+    UserDomainService,
+    OrderFacade,
   ],
   exports: [
-    OrderService,
+    OrderFacade,
     OrderRepository,
     OrderItemRepository,
     IOrderRepository,
