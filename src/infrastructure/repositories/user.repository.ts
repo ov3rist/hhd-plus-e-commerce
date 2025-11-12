@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import {
   IUserRepository,
   IUserBalanceChangeLogRepository,
-} from '@application/interfaces';
+} from '@domain/interfaces';
 import { User } from '@domain/user/user.entity';
 import { UserBalanceChangeLog } from '@domain/user/user-balance-change-log.entity';
 import { MutexManager } from '@infrastructure/common/mutex-manager';

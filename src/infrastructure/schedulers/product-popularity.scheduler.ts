@@ -4,7 +4,7 @@ import {
   IOrderItemRepository,
   IProductRepository,
   IProductOptionRepository,
-} from '@application/interfaces';
+} from '@domain/interfaces';
 import { ProductPopularitySnapshot } from '@domain/product/product-popularity-snapshot.entity';
 
 /**

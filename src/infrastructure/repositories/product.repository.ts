@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import {
   IProductRepository,
   IProductOptionRepository,
-} from '@application/interfaces';
+} from '@domain/interfaces';
 import { Product } from '@domain/product/product.entity';
 import { ProductOption } from '@domain/product/product-option.entity';
 import { ProductPopularitySnapshot } from '@domain/product/product-popularity-snapshot.entity';

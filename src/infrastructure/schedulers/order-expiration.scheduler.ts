@@ -4,7 +4,7 @@ import {
   IOrderRepository,
   IOrderItemRepository,
   IProductOptionRepository,
-} from '@application/interfaces';
+} from '@domain/interfaces';
 
 /**
  * Order Expiration Scheduler

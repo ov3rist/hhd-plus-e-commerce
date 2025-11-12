@@ -1,8 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import {
-  ICouponRepository,
-  IUserCouponRepository,
-} from '@application/interfaces';
+import { ICouponRepository, IUserCouponRepository } from '@domain/interfaces';
 import { Coupon } from '@domain/coupon/coupon.entity';
 import { UserCoupon } from '@domain/coupon/user-coupon.entity';
 import { MutexManager } from '@infrastructure/common/mutex-manager';
