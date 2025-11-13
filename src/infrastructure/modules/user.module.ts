@@ -18,19 +18,28 @@ import { UserController } from '@presentation/user';
 @Module({
   controllers: [UserController],
   providers: [
+    // User Repositories
     UserRepository,
-    UserBalanceChangeLogRepository,
     {
       provide: IUserRepository,
       useClass: UserRepository,
     },
+    UserBalanceChangeLogRepository,
     {
       provide: IUserBalanceChangeLogRepository,
       useClass: UserBalanceChangeLogRepository,
     },
+
+    // Domain Service
     UserDomainService,
+
+    // Facade
     UserFacade,
   ],
-  exports: [UserFacade],
+  exports: [
+    UserDomainService,
+    IUserRepository,
+    IUserBalanceChangeLogRepository,
+  ],
 })
 export class UserModule {}

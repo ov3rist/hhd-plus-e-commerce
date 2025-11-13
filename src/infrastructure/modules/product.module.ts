@@ -4,10 +4,12 @@ import { ProductDomainService } from '@domain/product';
 import {
   IProductRepository,
   IProductOptionRepository,
+  IProductPopularitySnapshotRepository,
 } from '@domain/interfaces';
 import {
   ProductRepository,
   ProductOptionRepository,
+  ProductPopularitySnapshotRepository,
 } from '@infrastructure/repositories';
 import { ProductController } from '@presentation/product';
 
@@ -18,19 +20,34 @@ import { ProductController } from '@presentation/product';
 @Module({
   controllers: [ProductController],
   providers: [
+    // Product Repositories
     ProductRepository,
-    ProductOptionRepository,
     {
       provide: IProductRepository,
       useClass: ProductRepository,
     },
+    ProductOptionRepository,
     {
       provide: IProductOptionRepository,
       useClass: ProductOptionRepository,
     },
+    ProductPopularitySnapshotRepository,
+    {
+      provide: IProductPopularitySnapshotRepository,
+      useClass: ProductPopularitySnapshotRepository,
+    },
+
+    // Domain Service
     ProductDomainService,
+
+    // Facade
     ProductFacade,
   ],
-  exports: [ProductFacade, IProductRepository, IProductOptionRepository],
+  exports: [
+    ProductDomainService,
+    IProductRepository,
+    IProductOptionRepository,
+    IProductPopularitySnapshotRepository,
+  ],
 })
 export class ProductModule {}

@@ -15,19 +15,24 @@ import { CouponController } from '@presentation/coupon';
 @Module({
   controllers: [CouponController],
   providers: [
+    // Coupon Repositories
     CouponRepository,
-    UserCouponRepository,
     {
       provide: ICouponRepository,
       useClass: CouponRepository,
     },
+    UserCouponRepository,
     {
       provide: IUserCouponRepository,
       useClass: UserCouponRepository,
     },
+
+    // Domain Service
     CouponDomainService,
+
+    // Facade
     CouponFacade,
   ],
-  exports: [CouponFacade],
+  exports: [CouponDomainService, ICouponRepository, IUserCouponRepository],
 })
 export class CouponModule {}
