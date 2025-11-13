@@ -25,19 +25,37 @@ export class CartItem {
    */
   private validateQuantity(): void {
     if (!Number.isInteger(this.quantity) || this.quantity <= 0) {
-      throw new ValidationException('수량은 1 이상의 정수여야 합니다');
+      throw new ValidationException(ErrorCode.INVALID_QUANTITY);
     }
   }
+
+  /**
+   * 소유 검증
+   */
+  validateUserId(userId: number): void {
+    if (this.userId !== userId) {
+      throw new DomainException(ErrorCode.UNAUTHORIZED);
+    }
+  }
+
+  // /**
+  //  * 생성
+  //  */
+  // static create(
+  //   userId: number,
+  //   productOptionId: number,
+  //   quantity: number,
+  // ): CartItem {
+  //   const now = new Date();
+  //   return new CartItem(0, userId, productOptionId, quantity, now, now);
+  // }
 
   /**
    * 수량 변경
    * RF-005: 사용자는 장바구니에 상품을 추가할 수 있어야 한다
    */
   updateQuantity(quantity: number): void {
-    if (!Number.isInteger(quantity) || quantity <= 0) {
-      throw new DomainException(ErrorCode.INVALID_QUANTITY);
-    }
-
+    this.validateQuantity();
     this.quantity = quantity;
     this.updatedAt = new Date();
   }

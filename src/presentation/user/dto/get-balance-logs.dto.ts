@@ -47,7 +47,7 @@ export class GetBalanceLogsQueryDto {
  */
 export class BalanceLogDto {
   @ApiProperty({ description: '로그 ID' })
-  logId: number;
+  id: number;
 
   @ApiProperty({ description: '사용자 ID' })
   userId: number;

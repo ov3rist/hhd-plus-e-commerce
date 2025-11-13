@@ -8,7 +8,8 @@ import { UserCoupon } from '@domain/coupon/user-coupon.entity';
 export abstract class ICouponRepository {
   abstract findById(id: number): Promise<Coupon | null>;
   abstract findAll(): Promise<Coupon[]>;
-  abstract save(coupon: Coupon): Promise<Coupon>;
+  abstract create(coupon: Coupon): Promise<Coupon>;
+  abstract update(coupon: Coupon): Promise<Coupon>;
 }
 
 /**
@@ -18,9 +19,10 @@ export abstract class ICouponRepository {
 export abstract class IUserCouponRepository {
   abstract findById(id: number): Promise<UserCoupon | null>;
   abstract findByUserId(userId: number): Promise<UserCoupon[]>;
-  abstract findByUserIdAndCouponId(
+  abstract findByUserCoupon(
     userId: number,
     couponId: number,
   ): Promise<UserCoupon | null>;
-  abstract save(userCoupon: UserCoupon): Promise<UserCoupon>;
+  abstract create(userCoupon: UserCoupon): Promise<UserCoupon>;
+  abstract update(userCoupon: UserCoupon): Promise<UserCoupon>;
 }

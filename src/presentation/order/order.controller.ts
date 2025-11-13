@@ -4,36 +4,38 @@ import {
   Get,
   Body,
   Param,
-  Query,
   ParseIntPipe,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
-import { OrderService } from '@application/order.service';
+import { OrderFacade } from '@application/facades/order.facade';
 import {
   CreateOrderRequestDto,
   CreateOrderResponseDto,
   ProcessPaymentRequestDto,
   ProcessPaymentResponseDto,
-  GetOrdersQueryDto,
   GetOrdersResponseDto,
   GetOrderDetailResponseDto,
 } from './dto';
+import { OrderDomainService } from '@domain/order';
 
 /**
  * Order Controller
  * 주문/결제 API 엔드포인트
  */
 @ApiTags('orders')
-@Controller('api/orders')
+@Controller('api')
 export class OrderController {
-  constructor(private readonly orderService: OrderService) {}
+  constructor(
+    private readonly orderFacade: OrderFacade,
+    private readonly orderService: OrderDomainService,
+  ) {}
 
   /**
    * 주문서 생성 (US-008)
    */
-  @Post()
+  @Post('orders')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: '주문서 생성',
@@ -49,13 +51,17 @@ export class OrderController {
   async createOrder(
     @Body() dto: CreateOrderRequestDto,
   ): Promise<CreateOrderResponseDto> {
-    return this.orderService.createOrder(dto.userId, dto.items);
+    const orderCreateView = await this.orderFacade.createOrder(
+      dto.userId,
+      dto.items,
+    );
+    return orderCreateView;
   }
 
   /**
    * 결제 처리 (US-009)
    */
-  @Post(':orderId/payment')
+  @Post('orders/:orderId/payment')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: '결제 처리',
@@ -74,17 +80,18 @@ export class OrderController {
     @Param('orderId', ParseIntPipe) orderId: number,
     @Body() dto: ProcessPaymentRequestDto,
   ): Promise<ProcessPaymentResponseDto> {
-    return this.orderService.processPayment(
+    const paymentView = await this.orderFacade.processPayment(
       orderId,
       dto.userId,
       dto.userCouponId,
     );
+    return paymentView;
   }
 
   /**
    * 주문 내역 조회 (US-012)
    */
-  @Get('users/:userId')
+  @Get('users/:userId/orders')
   @ApiOperation({
     summary: '주문 내역 조회',
     description: '사용자의 주문 내역을 조회합니다.',
@@ -98,15 +105,15 @@ export class OrderController {
   @ApiResponse({ status: 404, description: '사용자를 찾을 수 없음' })
   async getOrdersByUser(
     @Param('userId', ParseIntPipe) userId: number,
-    @Query() query: GetOrdersQueryDto,
   ): Promise<GetOrdersResponseDto> {
-    return this.orderService.getOrdersByUser(userId, query.status);
+    const orderListView = await this.orderFacade.getOrders(userId);
+    return { orders: orderListView };
   }
 
   /**
    * 주문 상세 조회
    */
-  @Get(':orderId')
+  @Get('orders/:orderId')
   @ApiOperation({
     summary: '주문 상세 조회',
     description: '특정 주문의 상세 정보를 조회합니다.',
@@ -121,6 +128,7 @@ export class OrderController {
   async getOrderDetail(
     @Param('orderId', ParseIntPipe) orderId: number,
   ): Promise<GetOrderDetailResponseDto> {
-    return this.orderService.getOrderDetail(orderId);
+    const orderDetailView = await this.orderFacade.getOrderDetail(orderId);
+    return { orderDetail: orderDetailView };
   }
 }

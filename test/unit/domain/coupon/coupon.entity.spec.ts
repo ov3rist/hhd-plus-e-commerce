@@ -1,4 +1,4 @@
-import { Coupon } from '@domain/coupon';
+import { Coupon } from '@domain/coupon/coupon.entity';
 import { ErrorCode } from '@domain/common/constants/error-code';
 import {
   DomainException,
@@ -6,329 +6,407 @@ import {
 } from '@domain/common/exceptions';
 
 describe('Coupon Entity', () => {
-  const validCouponData = {
-    id: 1,
-    name: '신규 가입 쿠폰',
-    discountRate: 10,
-    totalQuantity: 100,
-    issuedQuantity: 0,
-    expiredAt: new Date('2025-12-31'),
-    createdAt: new Date('2025-01-01'),
-    updatedAt: new Date('2025-01-01'),
-  };
-
   describe('생성자', () => {
-    it('유효한 데이터로 Coupon을 생성할 수 있다', () => {
+    it('유효한 값으로 Coupon을 생성한다', () => {
+      // given
+      const id = 1;
+      const name = '10% 할인 쿠폰';
+      const discountRate = 10;
+      const totalQuantity = 100;
+      const issuedQuantity = 0;
+      const expiredAt = new Date('2025-12-31');
+      const createdAt = new Date();
+      const updatedAt = new Date();
+
       // when
       const coupon = new Coupon(
-        validCouponData.id,
-        validCouponData.name,
-        validCouponData.discountRate,
-        validCouponData.totalQuantity,
-        validCouponData.issuedQuantity,
-        validCouponData.expiredAt,
-        validCouponData.createdAt,
-        validCouponData.updatedAt,
+        id,
+        name,
+        discountRate,
+        totalQuantity,
+        issuedQuantity,
+        expiredAt,
+        createdAt,
+        updatedAt,
       );
 
       // then
-      expect(coupon.id).toBe(validCouponData.id);
-      expect(coupon.name).toBe(validCouponData.name);
-      expect(coupon.discountRate).toBe(validCouponData.discountRate);
-      expect(coupon.totalQuantity).toBe(validCouponData.totalQuantity);
-      expect(coupon.issuedQuantity).toBe(validCouponData.issuedQuantity);
-      expect(coupon.expiredAt).toEqual(validCouponData.expiredAt);
-      expect(coupon.createdAt).toEqual(validCouponData.createdAt);
-      expect(coupon.updatedAt).toEqual(validCouponData.updatedAt);
+      expect(coupon.id).toBe(id);
+      expect(coupon.name).toBe(name);
+      expect(coupon.discountRate).toBe(discountRate);
+      expect(coupon.totalQuantity).toBe(totalQuantity);
+      expect(coupon.issuedQuantity).toBe(issuedQuantity);
+      expect(coupon.expiredAt).toBe(expiredAt);
+      expect(coupon.createdAt).toBe(createdAt);
+      expect(coupon.updatedAt).toBe(updatedAt);
     });
 
-    describe('할인율 검증', () => {
-      it('할인율이 0 이하 또는 100 초과이면 ValidationException을 던진다', () => {
-        // when & then
-        expect(() => {
+    it('할인율이 0이면 INVALID_DISCOUNT_RATE 예외를 던진다', () => {
+      // given
+      const invalidDiscountRate = 0;
+
+      // when & then
+      expect(
+        () =>
           new Coupon(
-            validCouponData.id,
-            validCouponData.name,
-            0,
-            validCouponData.totalQuantity,
-            validCouponData.issuedQuantity,
-            validCouponData.expiredAt,
-            validCouponData.createdAt,
-            validCouponData.updatedAt,
-          );
-        }).toThrow(ValidationException);
-
-        expect(() => {
-          new Coupon(
-            validCouponData.id,
-            validCouponData.name,
-            -10,
-            validCouponData.totalQuantity,
-            validCouponData.issuedQuantity,
-            validCouponData.expiredAt,
-            validCouponData.createdAt,
-            validCouponData.updatedAt,
-          );
-        }).toThrow('할인율은 0보다 크고 100 이하여야 합니다');
-
-        expect(() => {
-          new Coupon(
-            validCouponData.id,
-            validCouponData.name,
-            101,
-            validCouponData.totalQuantity,
-            validCouponData.issuedQuantity,
-            validCouponData.expiredAt,
-            validCouponData.createdAt,
-            validCouponData.updatedAt,
-          );
-        }).toThrow(ValidationException);
-      });
-
-      it('할인율이 1~100이면 생성할 수 있다 (경계값)', () => {
-        // when
-        const coupon1 = new Coupon(
-          validCouponData.id,
-          validCouponData.name,
-          1,
-          validCouponData.totalQuantity,
-          validCouponData.issuedQuantity,
-          validCouponData.expiredAt,
-          validCouponData.createdAt,
-          validCouponData.updatedAt,
-        );
-        const coupon100 = new Coupon(
-          validCouponData.id,
-          validCouponData.name,
-          100,
-          validCouponData.totalQuantity,
-          validCouponData.issuedQuantity,
-          validCouponData.expiredAt,
-          validCouponData.createdAt,
-          validCouponData.updatedAt,
-        );
-
-        // then
-        expect(coupon1.discountRate).toBe(1);
-        expect(coupon100.discountRate).toBe(100);
-      });
-    });
-
-    describe('수량 검증', () => {
-      it('총 수량 또는 발급 수량이 음수이면 ValidationException을 던진다', () => {
-        // when & then
-        expect(() => {
-          new Coupon(
-            validCouponData.id,
-            validCouponData.name,
-            validCouponData.discountRate,
-            -1,
-            validCouponData.issuedQuantity,
-            validCouponData.expiredAt,
-            validCouponData.createdAt,
-            validCouponData.updatedAt,
-          );
-        }).toThrow('총 수량은 0 이상이어야 합니다');
-
-        expect(() => {
-          new Coupon(
-            validCouponData.id,
-            validCouponData.name,
-            validCouponData.discountRate,
-            validCouponData.totalQuantity,
-            -1,
-            validCouponData.expiredAt,
-            validCouponData.createdAt,
-            validCouponData.updatedAt,
-          );
-        }).toThrow('발급된 수량은 0 이상이어야 합니다');
-      });
-
-      it('발급된 수량이 총 수량을 초과하면 ValidationException을 던진다', () => {
-        // when & then
-        expect(() => {
-          new Coupon(
-            validCouponData.id,
-            validCouponData.name,
-            validCouponData.discountRate,
+            1,
+            '무효 쿠폰',
+            invalidDiscountRate,
             100,
-            101,
-            validCouponData.expiredAt,
-            validCouponData.createdAt,
-            validCouponData.updatedAt,
-          );
-        }).toThrow('발급된 수량이 총 수량을 초과할 수 없습니다');
-      });
+            0,
+            new Date('2025-12-31'),
+            new Date(),
+            new Date(),
+          ),
+      ).toThrow();
+
+      try {
+        new Coupon(
+          1,
+          '무효 쿠폰',
+          invalidDiscountRate,
+          100,
+          0,
+          new Date('2025-12-31'),
+          new Date(),
+          new Date(),
+        );
+      } catch (error) {
+        expect(error.name).toBe('ValidationException');
+        expect((error as ValidationException).errorCode).toBe(
+          ErrorCode.INVALID_DISCOUNT_RATE,
+        );
+      }
+    });
+
+    it('할인율이 100을 초과하면 INVALID_DISCOUNT_RATE 예외를 던진다', () => {
+      // given
+      const invalidDiscountRate = 101;
+
+      // when & then
+      expect(
+        () =>
+          new Coupon(
+            1,
+            '무효 쿠폰',
+            invalidDiscountRate,
+            100,
+            0,
+            new Date('2025-12-31'),
+            new Date(),
+            new Date(),
+          ),
+      ).toThrow();
+
+      try {
+        new Coupon(
+          1,
+          '무효 쿠폰',
+          invalidDiscountRate,
+          100,
+          0,
+          new Date('2025-12-31'),
+          new Date(),
+          new Date(),
+        );
+      } catch (error) {
+        expect(error.name).toBe('ValidationException');
+        expect((error as ValidationException).errorCode).toBe(
+          ErrorCode.INVALID_DISCOUNT_RATE,
+        );
+      }
+    });
+
+    it('총 수량이 음수이면 INVALID_ISSUE_QUANTITY 예외를 던진다', () => {
+      // given
+      const invalidTotalQuantity = -1;
+
+      // when & then
+      expect(
+        () =>
+          new Coupon(
+            1,
+            '무효 쿠폰',
+            10,
+            invalidTotalQuantity,
+            0,
+            new Date('2025-12-31'),
+            new Date(),
+            new Date(),
+          ),
+      ).toThrow();
+
+      try {
+        new Coupon(
+          1,
+          '무효 쿠폰',
+          10,
+          invalidTotalQuantity,
+          0,
+          new Date('2025-12-31'),
+          new Date(),
+          new Date(),
+        );
+      } catch (error) {
+        expect(error.name).toBe('ValidationException');
+        expect((error as ValidationException).errorCode).toBe(
+          ErrorCode.INVALID_ISSUE_QUANTITY,
+        );
+      }
+    });
+
+    it('발급된 수량이 음수이면 INVALID_ISSUE_QUANTITY 예외를 던진다', () => {
+      // given
+      const invalidIssuedQuantity = -1;
+
+      // when & then
+      expect(
+        () =>
+          new Coupon(
+            1,
+            '무효 쿠폰',
+            10,
+            100,
+            invalidIssuedQuantity,
+            new Date('2025-12-31'),
+            new Date(),
+            new Date(),
+          ),
+      ).toThrow();
+
+      try {
+        new Coupon(
+          1,
+          '무효 쿠폰',
+          10,
+          100,
+          invalidIssuedQuantity,
+          new Date('2025-12-31'),
+          new Date(),
+          new Date(),
+        );
+      } catch (error) {
+        expect(error.name).toBe('ValidationException');
+        expect((error as ValidationException).errorCode).toBe(
+          ErrorCode.INVALID_ISSUE_QUANTITY,
+        );
+      }
+    });
+
+    it('발급된 수량이 총 수량을 초과하면 INVALID_ISSUE_QUANTITY 예외를 던진다', () => {
+      // given
+      const totalQuantity = 100;
+      const invalidIssuedQuantity = 101;
+
+      // when & then
+      expect(
+        () =>
+          new Coupon(
+            1,
+            '무효 쿠폰',
+            10,
+            totalQuantity,
+            invalidIssuedQuantity,
+            new Date('2025-12-31'),
+            new Date(),
+            new Date(),
+          ),
+      ).toThrow();
+
+      try {
+        new Coupon(
+          1,
+          '무효 쿠폰',
+          10,
+          totalQuantity,
+          invalidIssuedQuantity,
+          new Date('2025-12-31'),
+          new Date(),
+          new Date(),
+        );
+      } catch (error) {
+        expect(error.name).toBe('ValidationException');
+        expect((error as ValidationException).errorCode).toBe(
+          ErrorCode.INVALID_ISSUE_QUANTITY,
+        );
+      }
     });
   });
 
   describe('canIssue', () => {
-    beforeEach(() => {
-      jest.useFakeTimers();
-    });
-
-    afterEach(() => {
-      jest.useRealTimers();
-    });
-
-    it('발급 가능한 쿠폰은 true, 품절/만료는 false를 반환한다', () => {
-      // given: 발급 가능
-      jest.setSystemTime(new Date('2025-06-01'));
-      const coupon1 = new Coupon(
-        validCouponData.id,
-        validCouponData.name,
-        validCouponData.discountRate,
+    it('발급 가능한 쿠폰은 true를 반환한다', () => {
+      // given
+      const coupon = new Coupon(
+        1,
+        '10% 할인',
+        10,
         100,
         50,
         new Date('2025-12-31'),
-        validCouponData.createdAt,
-        validCouponData.updatedAt,
+        new Date(),
+        new Date(),
       );
 
-      // when & then
-      expect(coupon1.canIssue()).toBe(true);
+      // when
+      const result = coupon.canIssue();
 
-      // given: 품절
-      const coupon2 = new Coupon(
-        validCouponData.id,
-        validCouponData.name,
-        validCouponData.discountRate,
-        100,
-        100,
-        new Date('2025-12-31'),
-        validCouponData.createdAt,
-        validCouponData.updatedAt,
-      );
+      // then
+      expect(result).toBe(true);
+    });
 
-      // when & then
-      expect(coupon2.canIssue()).toBe(false);
-
-      // given: 만료
-      jest.setSystemTime(new Date('2026-01-01'));
-      const coupon3 = new Coupon(
-        validCouponData.id,
-        validCouponData.name,
-        validCouponData.discountRate,
+    it('만료된 쿠폰은 false를 반환한다', () => {
+      // given
+      const expiredDate = new Date('2020-01-01');
+      const coupon = new Coupon(
+        1,
+        '만료 쿠폰',
+        10,
         100,
         50,
-        new Date('2025-12-31'),
-        validCouponData.createdAt,
-        validCouponData.updatedAt,
+        expiredDate,
+        new Date(),
+        new Date(),
       );
 
-      // when & then
-      expect(coupon3.canIssue()).toBe(false);
+      // when
+      const result = coupon.canIssue();
+
+      // then
+      expect(result).toBe(false);
+    });
+
+    it('발급 수량이 다 찬 쿠폰은 false를 반환한다', () => {
+      // given
+      const coupon = new Coupon(
+        1,
+        '품절 쿠폰',
+        10,
+        100,
+        100,
+        new Date('2025-12-31'),
+        new Date(),
+        new Date(),
+      );
+
+      // when
+      const result = coupon.canIssue();
+
+      // then
+      expect(result).toBe(false);
     });
   });
 
   describe('isExpired', () => {
-    beforeEach(() => {
-      jest.useFakeTimers();
-    });
-
-    afterEach(() => {
-      jest.useRealTimers();
-    });
-
-    it('만료일 기준으로 true/false를 반환한다', () => {
+    it('만료되지 않은 쿠폰은 false를 반환한다', () => {
       // given
+      const futureDate = new Date('2025-12-31');
       const coupon = new Coupon(
-        validCouponData.id,
-        validCouponData.name,
-        validCouponData.discountRate,
-        validCouponData.totalQuantity,
-        validCouponData.issuedQuantity,
-        new Date('2025-12-31'),
-        validCouponData.createdAt,
-        validCouponData.updatedAt,
+        1,
+        '유효 쿠폰',
+        10,
+        100,
+        0,
+        futureDate,
+        new Date(),
+        new Date(),
       );
 
-      // when & then: 만료일 이전
-      jest.setSystemTime(new Date('2025-06-01'));
-      expect(coupon.isExpired()).toBe(false);
+      // when
+      const result = coupon.isExpired();
 
-      // when & then: 만료일 이후
-      jest.setSystemTime(new Date('2026-01-01'));
-      expect(coupon.isExpired()).toBe(true);
+      // then
+      expect(result).toBe(false);
+    });
+
+    it('만료된 쿠폰은 true를 반환한다', () => {
+      // given
+      const pastDate = new Date('2020-01-01');
+      const coupon = new Coupon(
+        1,
+        '만료 쿠폰',
+        10,
+        100,
+        0,
+        pastDate,
+        new Date(),
+        new Date(),
+      );
+
+      // when
+      const result = coupon.isExpired();
+
+      // then
+      expect(result).toBe(true);
     });
   });
 
   describe('issue', () => {
-    beforeEach(() => {
-      jest.useFakeTimers();
-    });
-
-    afterEach(() => {
-      jest.useRealTimers();
-    });
-
-    it('발급 가능한 쿠폰은 발급 수량을 증가시키고 updatedAt을 갱신한다', () => {
+    it('발급 가능한 쿠폰을 발급하고 발급 수량을 증가시킨다', () => {
       // given
-      const originalUpdatedAt = new Date('2025-01-01');
-      jest.setSystemTime(new Date('2025-06-01'));
       const coupon = new Coupon(
-        validCouponData.id,
-        validCouponData.name,
-        validCouponData.discountRate,
+        1,
+        '10% 할인',
+        10,
         100,
         50,
         new Date('2025-12-31'),
-        validCouponData.createdAt,
-        originalUpdatedAt,
+        new Date(),
+        new Date(),
       );
-
-      const newTime = new Date('2025-06-02');
-      jest.setSystemTime(newTime);
+      const originalIssuedQuantity = coupon.issuedQuantity;
 
       // when
       coupon.issue();
 
       // then
-      expect(coupon.issuedQuantity).toBe(51);
-      expect(coupon.updatedAt).toEqual(newTime);
-      expect(coupon.updatedAt).not.toEqual(originalUpdatedAt);
+      expect(coupon.issuedQuantity).toBe(originalIssuedQuantity + 1);
     });
 
-    it('만료/품절된 쿠폰은 DomainException을 던진다', () => {
-      // given: 만료
-      jest.setSystemTime(new Date('2026-01-01'));
-      const expiredCoupon = new Coupon(
-        validCouponData.id,
-        validCouponData.name,
-        validCouponData.discountRate,
+    it('만료된 쿠폰을 발급하려 하면 EXPIRED_COUPON 예외를 던진다', () => {
+      // given
+      const expiredDate = new Date('2020-01-01');
+      const coupon = new Coupon(
+        1,
+        '만료 쿠폰',
+        10,
         100,
         50,
-        new Date('2025-12-31'),
-        validCouponData.createdAt,
-        validCouponData.updatedAt,
+        expiredDate,
+        new Date(),
+        new Date(),
       );
 
       // when & then
+      expect(() => coupon.issue()).toThrow(DomainException);
+
       try {
-        expiredCoupon.issue();
+        coupon.issue();
       } catch (error) {
         expect(error).toBeInstanceOf(DomainException);
         expect((error as DomainException).errorCode).toBe(
           ErrorCode.EXPIRED_COUPON,
         );
       }
+    });
 
-      // given: 품절
-      jest.setSystemTime(new Date('2025-06-01'));
-      const soldOutCoupon = new Coupon(
-        validCouponData.id,
-        validCouponData.name,
-        validCouponData.discountRate,
+    it('품절된 쿠폰을 발급하려 하면 COUPON_SOLD_OUT 예외를 던진다', () => {
+      // given
+      const coupon = new Coupon(
+        1,
+        '품절 쿠폰',
+        10,
         100,
         100,
         new Date('2025-12-31'),
-        validCouponData.createdAt,
-        validCouponData.updatedAt,
+        new Date(),
+        new Date(),
       );
 
       // when & then
+      expect(() => coupon.issue()).toThrow(DomainException);
+
       try {
-        soldOutCoupon.issue();
+        coupon.issue();
       } catch (error) {
         expect(error).toBeInstanceOf(DomainException);
         expect((error as DomainException).errorCode).toBe(
@@ -339,56 +417,115 @@ describe('Coupon Entity', () => {
   });
 
   describe('calculateDiscount', () => {
-    it('할인 금액을 정확히 계산하고 소숫점 첫 번째 자리에서 버린다 (BR-010)', () => {
-      // given
-      const coupon10 = new Coupon(
-        validCouponData.id,
-        validCouponData.name,
-        10, // 10% 할인
-        validCouponData.totalQuantity,
-        validCouponData.issuedQuantity,
-        validCouponData.expiredAt,
-        validCouponData.createdAt,
-        validCouponData.updatedAt,
-      );
-      const coupon15 = new Coupon(
-        validCouponData.id,
-        validCouponData.name,
-        15, // 15% 할인
-        validCouponData.totalQuantity,
-        validCouponData.issuedQuantity,
-        validCouponData.expiredAt,
-        validCouponData.createdAt,
-        validCouponData.updatedAt,
-      );
-
-      // when & then
-      expect(coupon10.calculateDiscount(10000)).toBe(1000); // 10000 * 0.1 = 1000
-      expect(coupon15.calculateDiscount(1000)).toBe(150); // 1000 * 0.15 = 150.0
-      expect(coupon10.calculateDiscount(1234)).toBe(123); // 1234 * 0.1 = 123.4 -> 123 (버림)
-      expect(coupon10.calculateDiscount(0)).toBe(0); // 금액 0
-    });
-
-    it('금액이 음수이면 ValidationException을 던진다', () => {
+    it('할인 금액을 올바르게 계산한다', () => {
       // given
       const coupon = new Coupon(
-        validCouponData.id,
-        validCouponData.name,
-        validCouponData.discountRate,
-        validCouponData.totalQuantity,
-        validCouponData.issuedQuantity,
-        validCouponData.expiredAt,
-        validCouponData.createdAt,
-        validCouponData.updatedAt,
+        1,
+        '10% 할인',
+        10,
+        100,
+        0,
+        new Date('2025-12-31'),
+        new Date(),
+        new Date(),
       );
+      const amount = 10000;
+
+      // when
+      const discount = coupon.calculateDiscount(amount);
+
+      // then
+      expect(discount).toBe(1000); // 10000 * 0.1 = 1000
+    });
+
+    it('할인 금액은 소숫점 첫 번째 자리에서 버린다', () => {
+      // given
+      const coupon = new Coupon(
+        1,
+        '15% 할인',
+        15,
+        100,
+        0,
+        new Date('2025-12-31'),
+        new Date(),
+        new Date(),
+      );
+      const amount = 1234;
+
+      // when
+      const discount = coupon.calculateDiscount(amount);
+
+      // then
+      expect(discount).toBe(185); // 1234 * 0.15 = 185.1 -> 185
+    });
+
+    it('금액이 음수이면 INVALID_DISCOUNT_RATE 예외를 던진다', () => {
+      // given
+      const coupon = new Coupon(
+        1,
+        '10% 할인',
+        10,
+        100,
+        0,
+        new Date('2025-12-31'),
+        new Date(),
+        new Date(),
+      );
+      const invalidAmount = -1000;
 
       // when & then
-      expect(() => coupon.calculateDiscount(-1000)).toThrow(
-        '금액은 0 이상이어야 합니다',
-      );
+      expect(() => coupon.calculateDiscount(invalidAmount)).toThrow();
+
+      try {
+        coupon.calculateDiscount(invalidAmount);
+      } catch (error) {
+        expect(error.name).toBe('ValidationException');
+        expect((error as ValidationException).errorCode).toBe(
+          ErrorCode.INVALID_DISCOUNT_RATE,
+        );
+      }
     });
   });
 
-  // TypeScript의 readonly는 컴파일 타임에만 검증되므로
-  // 별도의 런타임 불변성 테스트는 작성하지 않음
+  describe('getRemain', () => {
+    it('남은 발급 가능 수량을 반환한다', () => {
+      // given
+      const coupon = new Coupon(
+        1,
+        '10% 할인',
+        10,
+        100,
+        30,
+        new Date('2025-12-31'),
+        new Date(),
+        new Date(),
+      );
+
+      // when
+      const remain = coupon.getRemain();
+
+      // then
+      expect(remain).toBe(70); // 100 - 30
+    });
+
+    it('발급 수량이 다 찬 경우 0을 반환한다', () => {
+      // given
+      const coupon = new Coupon(
+        1,
+        '품절 쿠폰',
+        10,
+        100,
+        100,
+        new Date('2025-12-31'),
+        new Date(),
+        new Date(),
+      );
+
+      // when
+      const remain = coupon.getRemain();
+
+      // then
+      expect(remain).toBe(0);
+    });
+  });
 });

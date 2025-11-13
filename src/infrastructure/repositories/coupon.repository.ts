@@ -1,8 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import {
-  ICouponRepository,
-  IUserCouponRepository,
-} from '@application/interfaces';
+import { ICouponRepository, IUserCouponRepository } from '@domain/interfaces';
 import { Coupon } from '@domain/coupon/coupon.entity';
 import { UserCoupon } from '@domain/coupon/user-coupon.entity';
 import { MutexManager } from '@infrastructure/common/mutex-manager';
@@ -17,34 +14,43 @@ export class CouponRepository implements ICouponRepository {
   private currentId = 1;
   private readonly mutexManager = new MutexManager();
 
+  // ANCHOR coupon.findById
   async findById(id: number): Promise<Coupon | null> {
     return this.coupons.get(id) || null;
   }
 
+  // ANCHOR coupon.findAll
   async findAll(): Promise<Coupon[]> {
     return Array.from(this.coupons.values());
   }
 
-  async save(coupon: Coupon): Promise<Coupon> {
-    const couponId = coupon.id || 0;
-    const unlock = await this.mutexManager.acquire(couponId);
+  // ANCHOR coupon.create
+  async create(coupon: Coupon): Promise<Coupon> {
+    const unlock = await this.mutexManager.acquire(0);
 
     try {
-      if (coupon.id === 0) {
-        const newCoupon = new Coupon(
-          this.currentId++,
-          coupon.name,
-          coupon.discountRate,
-          coupon.totalQuantity,
-          coupon.issuedQuantity,
-          coupon.expiredAt,
-          coupon.createdAt,
-          coupon.updatedAt,
-        );
-        this.coupons.set(newCoupon.id, newCoupon);
-        return newCoupon;
-      }
+      const newCoupon = new Coupon(
+        this.currentId++,
+        coupon.name,
+        coupon.discountRate,
+        coupon.totalQuantity,
+        coupon.issuedQuantity,
+        coupon.expiredAt,
+        coupon.createdAt,
+        coupon.updatedAt,
+      );
+      this.coupons.set(newCoupon.id, newCoupon);
+      return newCoupon;
+    } finally {
+      unlock();
+    }
+  }
 
+  // ANCHOR coupon.update
+  async update(coupon: Coupon): Promise<Coupon> {
+    const unlock = await this.mutexManager.acquire(coupon.id);
+
+    try {
       this.coupons.set(coupon.id, coupon);
       return coupon;
     } finally {
@@ -61,17 +67,20 @@ export class UserCouponRepository implements IUserCouponRepository {
   private userCoupons: Map<number, UserCoupon> = new Map();
   private currentId = 1;
 
+  // ANCHOR userCoupon.findById
   async findById(id: number): Promise<UserCoupon | null> {
     return this.userCoupons.get(id) || null;
   }
 
+  // ANCHOR userCoupon.findByUserId
   async findByUserId(userId: number): Promise<UserCoupon[]> {
     return Array.from(this.userCoupons.values()).filter(
       (uc) => uc.userId === userId,
     );
   }
 
-  async findByUserIdAndCouponId(
+  // ANCHOR userCoupon.findByUserCoupon
+  async findByUserCoupon(
     userId: number,
     couponId: number,
   ): Promise<UserCoupon | null> {
@@ -82,22 +91,24 @@ export class UserCouponRepository implements IUserCouponRepository {
     );
   }
 
-  async save(userCoupon: UserCoupon): Promise<UserCoupon> {
-    if (userCoupon.id === 0) {
-      const newUserCoupon = new UserCoupon(
-        this.currentId++,
-        userCoupon.userId,
-        userCoupon.couponId,
-        userCoupon.orderId,
-        userCoupon.createdAt,
-        userCoupon.usedAt,
-        userCoupon.expiredAt,
-        userCoupon.updatedAt,
-      );
-      this.userCoupons.set(newUserCoupon.id, newUserCoupon);
-      return newUserCoupon;
-    }
+  // ANCHOR userCoupon.create
+  async create(userCoupon: UserCoupon): Promise<UserCoupon> {
+    const newUserCoupon = new UserCoupon(
+      this.currentId++,
+      userCoupon.userId,
+      userCoupon.couponId,
+      userCoupon.orderId,
+      userCoupon.createdAt,
+      userCoupon.usedAt,
+      userCoupon.expiredAt,
+      userCoupon.updatedAt,
+    );
+    this.userCoupons.set(newUserCoupon.id, newUserCoupon);
+    return newUserCoupon;
+  }
 
+  // ANCHOR userCoupon.update
+  async update(userCoupon: UserCoupon): Promise<UserCoupon> {
     this.userCoupons.set(userCoupon.id, userCoupon);
     return userCoupon;
   }

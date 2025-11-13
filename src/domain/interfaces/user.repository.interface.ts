@@ -7,7 +7,8 @@ import { UserBalanceChangeLog } from '@domain/user/user-balance-change-log.entit
  */
 export abstract class IUserRepository {
   abstract findById(id: number): Promise<User | null>;
-  abstract save(user: User): Promise<User>;
+  abstract create(user: User): Promise<User>;
+  abstract update(user: User): Promise<User>;
 }
 
 /**
@@ -15,20 +16,6 @@ export abstract class IUserRepository {
  * 사용자 잔액 변경 로그 데이터 접근 계약
  */
 export abstract class IUserBalanceChangeLogRepository {
-  abstract save(log: UserBalanceChangeLog): Promise<UserBalanceChangeLog>;
+  abstract create(log: UserBalanceChangeLog): Promise<UserBalanceChangeLog>;
   abstract findByUserId(userId: number): Promise<UserBalanceChangeLog[]>;
-  abstract findByUserIdWithFilter(
-    userId: number,
-    filter: {
-      from?: Date;
-      to?: Date;
-      code?: string;
-      refId?: number;
-      page?: number;
-      size?: number;
-    },
-  ): Promise<{
-    logs: UserBalanceChangeLog[];
-    total: number;
-  }>;
 }

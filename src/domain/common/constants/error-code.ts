@@ -16,6 +16,18 @@ export const ErrorCode = {
     code: 'P004',
     message: '상품 옵션을 찾을 수 없음',
   },
+  PRODUCT_UNAVAILABLE: {
+    code: 'P005',
+    message: '현재 판매중이 아닙니다.',
+  },
+  INVALID_PRICE: {
+    code: 'P006',
+    message: '잘못된 가격',
+  },
+  INVALID_ARGUMENT: {
+    code: 'P007',
+    message: '잘못된 인자 전달',
+  },
 
   // Order
   INVALID_QUANTITY: {
@@ -82,11 +94,33 @@ export const ErrorCode = {
     code: 'C007',
     message: '쿠폰 정보를 찾을 수 없습니다',
   },
+  INVALID_DISCOUNT_RATE: {
+    code: 'C008',
+    message: '잘못된 할인율',
+  },
+  INVALID_ISSUE_QUANTITY: {
+    code: 'C009',
+    message: '잘못된 발급 수량',
+  },
 
   // User
   USER_NOT_FOUND: {
     code: 'U001',
     message: '사용자를 찾을 수 없음',
+  },
+  UNAUTHORIZED: {
+    code: 'U002',
+    message: '권한이 없습니다',
+  },
+
+  // User Balance Change Log
+  INVALID_USER_BALANCE: {
+    code: 'UBC001',
+    message: '잔액은 0이상 정수여야 합니다',
+  },
+  USER_LOG_INVALID_CALCULATION: {
+    code: 'UBC002',
+    message: '잔액 변경 계산이 일치하지 않음',
   },
 
   // Cart
@@ -94,8 +128,10 @@ export const ErrorCode = {
     code: 'CART001',
     message: '장바구니 항목을 찾을 수 없음',
   },
-  UNAUTHORIZED_CART_ACCESS: {
-    code: 'CART002',
-    message: '권한이 없습니다',
+
+  // Numbering
+  INVALID_AMOUNT: {
+    code: 'D001',
+    message: '수량은 0 이상 정수여야 합니다',
   },
 } as const;

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { ICartRepository } from '@application/interfaces';
+import { ICartRepository } from '@domain/interfaces';
 import { CartItem } from '@domain/cart/cart-item.entity';
 
 /**
@@ -10,47 +10,51 @@ export class CartRepository implements ICartRepository {
   private cartItems: Map<number, CartItem> = new Map();
   private currentId = 1;
 
+  // ANCHOR findById
   async findById(id: number): Promise<CartItem | null> {
     return this.cartItems.get(id) || null;
   }
 
-  async findByUserId(userId: number): Promise<CartItem[]> {
+  // ANCHOR findManyByUserId
+  async findManyByUserId(userId: number): Promise<CartItem[]> {
     return Array.from(this.cartItems.values()).filter(
       (item) => item.userId === userId,
     );
   }
 
-  async findByUserIdAndProductOptionId(
+  // ANCHOR create
+  async create(
     userId: number,
     productOptionId: number,
-  ): Promise<CartItem | null> {
-    return (
-      Array.from(this.cartItems.values()).find(
-        (item) =>
-          item.userId === userId && item.productOptionId === productOptionId,
-      ) || null
+    quantity: number,
+  ): Promise<CartItem> {
+    const newCartItem = new CartItem(
+      this.currentId++,
+      userId,
+      productOptionId,
+      quantity,
+      new Date(),
+      new Date(),
     );
+    this.cartItems.set(newCartItem.id, newCartItem);
+    return newCartItem;
   }
 
-  async save(cartItem: CartItem): Promise<CartItem> {
-    if (cartItem.id === 0) {
-      const newItem = new CartItem(
-        this.currentId++,
-        cartItem.userId,
-        cartItem.productOptionId,
-        cartItem.quantity,
-        cartItem.createdAt,
-        cartItem.updatedAt,
-      );
-      this.cartItems.set(newItem.id, newItem);
-      return newItem;
-    }
-
+  // ANCHOR update
+  async update(cartItem: CartItem): Promise<CartItem> {
     this.cartItems.set(cartItem.id, cartItem);
     return cartItem;
   }
 
-  async deleteById(id: number): Promise<void> {
-    this.cartItems.delete(id);
+  // ANCHOR deleteByUserCart
+  async deleteByUserCart(
+    userId: number,
+    productOptionId: number,
+  ): Promise<void> {
+    for (const [id, item] of this.cartItems) {
+      if (item.userId === userId && item.productOptionId === productOptionId) {
+        this.cartItems.delete(id);
+      }
+    }
   }
 }

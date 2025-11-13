@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
-import { UserService } from '@application/user.service';
+import { UserFacade } from '@application/facades/user.facade';
+import { UserDomainService } from '@domain/user';
 import {
   IUserRepository,
   IUserBalanceChangeLogRepository,
-} from '@application/interfaces';
+} from '@domain/interfaces';
 import {
   UserRepository,
   UserBalanceChangeLogRepository,
@@ -17,18 +18,28 @@ import { UserController } from '@presentation/user';
 @Module({
   controllers: [UserController],
   providers: [
+    // User Repositories
     UserRepository,
-    UserBalanceChangeLogRepository,
     {
       provide: IUserRepository,
       useClass: UserRepository,
     },
+    UserBalanceChangeLogRepository,
     {
       provide: IUserBalanceChangeLogRepository,
       useClass: UserBalanceChangeLogRepository,
     },
-    UserService,
+
+    // Domain Service
+    UserDomainService,
+
+    // Facade
+    UserFacade,
   ],
-  exports: [UserService],
+  exports: [
+    UserDomainService,
+    IUserRepository,
+    IUserBalanceChangeLogRepository,
+  ],
 })
 export class UserModule {}

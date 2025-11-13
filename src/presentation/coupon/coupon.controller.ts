@@ -10,11 +10,10 @@ import {
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
-import { CouponService } from '@application/coupon.service';
+import { CouponFacade } from '@application/facades/coupon.facade';
 import {
   IssueCouponRequestDto,
   IssueCouponResponseDto,
-  GetUserCouponsQueryDto,
   GetUserCouponsResponseDto,
 } from './dto';
 
@@ -25,7 +24,7 @@ import {
 @ApiTags('coupons')
 @Controller('api')
 export class CouponController {
-  constructor(private readonly couponService: CouponService) {}
+  constructor(private readonly couponFacade: CouponFacade) {}
 
   /**
    * 쿠폰 발급 (US-013)
@@ -48,7 +47,7 @@ export class CouponController {
     @Param('couponId', ParseIntPipe) couponId: number,
     @Body() dto: IssueCouponRequestDto,
   ): Promise<IssueCouponResponseDto> {
-    return this.couponService.issueCoupon(dto.userId, couponId);
+    return this.couponFacade.issueCoupon(dto.userId, couponId);
   }
 
   /**
@@ -68,8 +67,8 @@ export class CouponController {
   @ApiResponse({ status: 404, description: '사용자를 찾을 수 없음' })
   async getUserCoupons(
     @Param('userId', ParseIntPipe) userId: number,
-    @Query() query: GetUserCouponsQueryDto,
   ): Promise<GetUserCouponsResponseDto> {
-    return this.couponService.getUserCoupons(userId, query.status);
+    const coupons = await this.couponFacade.getUserCoupons(userId);
+    return { coupons };
   }
 }

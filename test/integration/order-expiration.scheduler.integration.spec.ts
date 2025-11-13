@@ -11,7 +11,7 @@ import { OrderItem } from '@domain/order/order-item.entity';
 import { Product } from '@domain/product/product.entity';
 import { ProductOption } from '@domain/product/product-option.entity';
 import { User } from '@domain/user/user.entity';
-import { OrderStatus } from '@domain/order/order-status';
+import { OrderStatus } from '@domain/order/order-status.vo';
 
 describe('OrderExpirationScheduler Integration Tests', () => {
   let scheduler: OrderExpirationScheduler;
@@ -23,7 +23,7 @@ describe('OrderExpirationScheduler Integration Tests', () => {
 
   beforeEach(() => {
     orderRepository = new OrderRepository();
-    orderItemRepository = new OrderItemRepository(orderRepository);
+    orderItemRepository = new OrderItemRepository();
     productRepository = new ProductRepository();
     productOptionRepository = new ProductOptionRepository();
     userRepository = new UserRepository();
@@ -38,11 +38,11 @@ describe('OrderExpirationScheduler Integration Tests', () => {
   describe('10분 만료 재고 해제', () => {
     it('10분 경과한 PENDING 주문의 재고가 자동 해제된다', async () => {
       // Given: 10분 전에 생성된 주문
-      const user = await userRepository.save(
+      const user = await userRepository.create(
         new User(0, 100000, new Date(), new Date()),
       );
 
-      const product = await productRepository.save(
+      const product = await productRepository.create(
         new Product(
           0,
           '상품',
@@ -55,7 +55,7 @@ describe('OrderExpirationScheduler Integration Tests', () => {
         ),
       );
 
-      const productOption = await productOptionRepository.save(
+      const productOption = await productOptionRepository.create(
         new ProductOption(
           0,
           product.id,
@@ -70,12 +70,12 @@ describe('OrderExpirationScheduler Integration Tests', () => {
 
       // 재고 선점
       productOption.reserveStock(10);
-      await productOptionRepository.save(productOption);
+      await productOptionRepository.update(productOption);
 
       // 11분 전 주문 생성 (만료됨)
       const pastTime = new Date(Date.now() - 11 * 60 * 1000);
       const expiredTime = new Date(pastTime.getTime() + 10 * 60 * 1000);
-      const order = await orderRepository.save(
+      const order = await orderRepository.create(
         new Order(
           0,
           user.id,
@@ -91,7 +91,7 @@ describe('OrderExpirationScheduler Integration Tests', () => {
         ),
       );
 
-      await orderItemRepository.save(
+      await orderItemRepository.create(
         new OrderItem(
           0,
           order.id,

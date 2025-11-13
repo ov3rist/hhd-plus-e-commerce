@@ -1,9 +1,7 @@
 import { Module } from '@nestjs/common';
-import { CouponService } from '@application/coupon.service';
-import {
-  ICouponRepository,
-  IUserCouponRepository,
-} from '@application/interfaces';
+import { CouponFacade } from '@application/facades/coupon.facade';
+import { CouponDomainService } from '@domain/coupon';
+import { ICouponRepository, IUserCouponRepository } from '@domain/interfaces';
 import {
   CouponRepository,
   UserCouponRepository,
@@ -17,18 +15,24 @@ import { CouponController } from '@presentation/coupon';
 @Module({
   controllers: [CouponController],
   providers: [
+    // Coupon Repositories
     CouponRepository,
-    UserCouponRepository,
     {
       provide: ICouponRepository,
       useClass: CouponRepository,
     },
+    UserCouponRepository,
     {
       provide: IUserCouponRepository,
       useClass: UserCouponRepository,
     },
-    CouponService,
+
+    // Domain Service
+    CouponDomainService,
+
+    // Facade
+    CouponFacade,
   ],
-  exports: [CouponService],
+  exports: [CouponDomainService, ICouponRepository, IUserCouponRepository],
 })
 export class CouponModule {}

@@ -1,4 +1,3 @@
-// Repository Ports
 export * from './product.repository.interface';
 export * from './user.repository.interface';
 export * from './order.repository.interface';

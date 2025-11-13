@@ -18,9 +18,9 @@ export class ProductOptionDto {
 }
 
 /**
- * 상품 상세 조회 응답 DTO
+ * 상품 상세 DTO
  */
-export class GetProductDetailResponseDto {
+export class ProductDetailDto {
   @ApiProperty({ description: '상품 ID' })
   productId: number;
 
@@ -30,14 +30,22 @@ export class GetProductDetailResponseDto {
   @ApiProperty({ description: '가격' })
   price: number;
 
-  @ApiProperty({ description: '상품 설명' })
-  description: string;
-
   @ApiProperty({ description: '카테고리' })
   category: string;
 
+  @ApiProperty({ description: '상품 설명' })
+  description: string;
+
   @ApiProperty({ description: '판매 가능 여부' })
   isAvailable: boolean;
+}
+
+/**
+ * 상품 상세 조회 응답 DTO
+ */
+export class GetProductDetailResponseDto {
+  @ApiProperty({ description: '상품 정보' })
+  product: ProductDetailDto;
 
   @ApiProperty({
     description: '상품 옵션 목록',

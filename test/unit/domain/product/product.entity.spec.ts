@@ -1,208 +1,198 @@
-import { Product } from '@domain/product';
+import { Product } from '@domain/product/product.entity';
+import { ErrorCode } from '@domain/common/constants/error-code';
 import { ValidationException } from '@domain/common/exceptions';
 
 describe('Product Entity', () => {
-  const validProductData = {
-    id: 1,
-    name: '테스트 상품',
-    description: '테스트 상품 설명',
-    price: 10000,
-    category: '전자제품',
-    isAvailable: true,
-    createdAt: new Date('2025-01-01'),
-    updatedAt: new Date('2025-01-01'),
-  };
-
   describe('생성자', () => {
-    it('유효한 데이터로 Product를 생성할 수 있다', () => {
+    it('유효한 값으로 Product를 생성한다', () => {
+      // given
+      const id = 1;
+      const name = '테스트 상품';
+      const description = '상품 설명';
+      const price = 10000;
+      const category = '의류';
+      const isAvailable = true;
+      const createdAt = new Date();
+      const updatedAt = new Date();
+
       // when
       const product = new Product(
-        validProductData.id,
-        validProductData.name,
-        validProductData.description,
-        validProductData.price,
-        validProductData.category,
-        validProductData.isAvailable,
-        validProductData.createdAt,
-        validProductData.updatedAt,
+        id,
+        name,
+        description,
+        price,
+        category,
+        isAvailable,
+        createdAt,
+        updatedAt,
       );
 
       // then
-      expect(product.id).toBe(validProductData.id);
-      expect(product.name).toBe(validProductData.name);
-      expect(product.description).toBe(validProductData.description);
-      expect(product.price).toBe(validProductData.price);
-      expect(product.category).toBe(validProductData.category);
-      expect(product.isAvailable).toBe(validProductData.isAvailable);
-      expect(product.createdAt).toEqual(validProductData.createdAt);
-      expect(product.updatedAt).toEqual(validProductData.updatedAt);
+      expect(product.id).toBe(id);
+      expect(product.name).toBe(name);
+      expect(product.description).toBe(description);
+      expect(product.price).toBe(price);
+      expect(product.category).toBe(category);
+      expect(product.isAvailable).toBe(isAvailable);
+      expect(product.createdAt).toBe(createdAt);
+      expect(product.updatedAt).toBe(updatedAt);
     });
 
-    describe('가격 검증', () => {
-      it('가격이 음수이면 ValidationException을 던진다', () => {
-        // when & then
-        expect(() => {
-          new Product(
-            validProductData.id,
-            validProductData.name,
-            validProductData.description,
-            -1000,
-            validProductData.category,
-            validProductData.isAvailable,
-            validProductData.createdAt,
-            validProductData.updatedAt,
-          );
-        }).toThrow(ValidationException);
+    it('가격이 음수이면 INVALID_PRICE 예외를 던진다', () => {
+      // given
+      const invalidPrice = -1000;
 
-        expect(() => {
+      // when & then
+      expect(
+        () =>
           new Product(
-            validProductData.id,
-            validProductData.name,
-            validProductData.description,
-            -1000,
-            validProductData.category,
-            validProductData.isAvailable,
-            validProductData.createdAt,
-            validProductData.updatedAt,
-          );
-        }).toThrow('가격은 0 이상이어야 합니다');
-      });
+            1,
+            '테스트 상품',
+            '설명',
+            invalidPrice,
+            '의류',
+            true,
+            new Date(),
+            new Date(),
+          ),
+      ).toThrow();
 
-      it('가격이 0이면 생성할 수 있다', () => {
-        // when
-        const product = new Product(
-          validProductData.id,
-          validProductData.name,
-          validProductData.description,
-          0,
-          validProductData.category,
-          validProductData.isAvailable,
-          validProductData.createdAt,
-          validProductData.updatedAt,
+      try {
+        new Product(
+          1,
+          '테스트 상품',
+          '설명',
+          invalidPrice,
+          '의류',
+          true,
+          new Date(),
+          new Date(),
         );
+      } catch (error) {
+        expect(error.name).toBe('ValidationException');
+        expect((error as ValidationException).errorCode).toBe(
+          ErrorCode.INVALID_PRICE,
+        );
+      }
+    });
 
-        // then
-        expect(product.price).toBe(0);
-      });
+    it('가격이 0이면 정상적으로 생성된다', () => {
+      // given
+      const zeroPrice = 0;
+
+      // when
+      const product = new Product(
+        1,
+        '무료 상품',
+        '설명',
+        zeroPrice,
+        '의류',
+        true,
+        new Date(),
+        new Date(),
+      );
+
+      // then
+      expect(product.price).toBe(0);
     });
   });
 
-  describe('canBeSold', () => {
-    it('판매 가능 상태이면 true를 반환한다', () => {
+  describe('validateAvailability', () => {
+    it('판매 가능한 상품은 검증을 통과한다', () => {
       // given
       const product = new Product(
-        validProductData.id,
-        validProductData.name,
-        validProductData.description,
-        validProductData.price,
-        validProductData.category,
+        1,
+        '테스트 상품',
+        '설명',
+        10000,
+        '의류',
         true,
-        validProductData.createdAt,
-        validProductData.updatedAt,
+        new Date(),
+        new Date(),
       );
 
-      // when
-      const result = product.canBeSold();
-
-      // then
-      expect(result).toBe(true);
+      // when & then
+      expect(() => product.validateAvailability()).not.toThrow();
     });
 
-    it('판매 불가 상태이면 false를 반환한다', () => {
+    it('판매 불가능한 상품은 PRODUCT_UNAVAILABLE 예외를 던진다', () => {
       // given
       const product = new Product(
-        validProductData.id,
-        validProductData.name,
-        validProductData.description,
-        validProductData.price,
-        validProductData.category,
+        1,
+        '판매중지 상품',
+        '설명',
+        10000,
+        '의류',
         false,
-        validProductData.createdAt,
-        validProductData.updatedAt,
+        new Date(),
+        new Date(),
       );
 
-      // when
-      const result = product.canBeSold();
+      // when & then
+      expect(() => product.validateAvailability()).toThrow();
 
-      // then
-      expect(result).toBe(false);
+      try {
+        product.validateAvailability();
+      } catch (error) {
+        expect(error.name).toBe('ValidationException');
+        expect((error as ValidationException).errorCode).toBe(
+          ErrorCode.PRODUCT_UNAVAILABLE,
+        );
+      }
     });
   });
 
   describe('markAsUnavailable', () => {
-    beforeEach(() => {
-      jest.useFakeTimers();
-    });
-
-    afterEach(() => {
-      jest.useRealTimers();
-    });
-
-    it('상품을 판매 불가 상태로 변경하고 updatedAt을 갱신한다', () => {
+    it('상품을 판매 중지 상태로 변경하고 updatedAt을 갱신한다', () => {
       // given
-      const originalUpdatedAt = new Date('2025-01-01');
-      jest.setSystemTime(originalUpdatedAt);
       const product = new Product(
-        validProductData.id,
-        validProductData.name,
-        validProductData.description,
-        validProductData.price,
-        validProductData.category,
+        1,
+        '테스트 상품',
+        '설명',
+        10000,
+        '의류',
         true,
-        validProductData.createdAt,
-        originalUpdatedAt,
+        new Date(),
+        new Date(),
       );
-
-      const newTime = new Date('2025-01-02');
-      jest.setSystemTime(newTime);
+      const originalUpdatedAt = product.updatedAt;
 
       // when
       product.markAsUnavailable();
 
       // then
       expect(product.isAvailable).toBe(false);
-      expect(product.updatedAt).toEqual(newTime);
-      expect(product.updatedAt).not.toEqual(originalUpdatedAt);
+      expect(product.updatedAt).not.toBe(originalUpdatedAt);
+      expect(product.updatedAt.getTime()).toBeGreaterThanOrEqual(
+        originalUpdatedAt.getTime(),
+      );
     });
   });
 
   describe('markAsAvailable', () => {
-    beforeEach(() => {
-      jest.useFakeTimers();
-    });
-
-    afterEach(() => {
-      jest.useRealTimers();
-    });
-
     it('상품을 판매 가능 상태로 변경하고 updatedAt을 갱신한다', () => {
       // given
-      const originalUpdatedAt = new Date('2025-01-01');
-      jest.setSystemTime(originalUpdatedAt);
       const product = new Product(
-        validProductData.id,
-        validProductData.name,
-        validProductData.description,
-        validProductData.price,
-        validProductData.category,
+        1,
+        '테스트 상품',
+        '설명',
+        10000,
+        '의류',
         false,
-        validProductData.createdAt,
-        originalUpdatedAt,
+        new Date(),
+        new Date(),
       );
-
-      const newTime = new Date('2025-01-02');
-      jest.setSystemTime(newTime);
+      const originalUpdatedAt = product.updatedAt;
 
       // when
       product.markAsAvailable();
 
       // then
       expect(product.isAvailable).toBe(true);
-      expect(product.updatedAt).toEqual(newTime);
-      expect(product.updatedAt).not.toEqual(originalUpdatedAt);
+      expect(product.updatedAt).not.toBe(originalUpdatedAt);
+      expect(product.updatedAt.getTime()).toBeGreaterThanOrEqual(
+        originalUpdatedAt.getTime(),
+      );
     });
   });
-
-  // TypeScript의 readonly는 컴파일 타임에만 검증되므로
-  // 별도의 런타임 불변성 테스트는 작성하지 않음
 });

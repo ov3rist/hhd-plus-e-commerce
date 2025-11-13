@@ -1,3 +1,4 @@
+import { ErrorCode } from '@domain/common/constants/error-code';
 import { ValidationException } from '@domain/common/exceptions';
 
 /**
@@ -14,7 +15,7 @@ export class UserBalanceChangeLog {
     public readonly code: BalanceChangeCode,
     public readonly note: string | null,
     public readonly refId: number | null,
-    public readonly createdAt: Date,
+    public readonly createdAt: Date = new Date(),
   ) {
     this.validate();
   }
@@ -22,46 +23,15 @@ export class UserBalanceChangeLog {
   private validate(): void {
     // BR-021: amount는 0이 될 수 없음
     if (this.amount === 0) {
-      throw new ValidationException('잔액 변경 금액은 0이 될 수 없습니다');
+      throw new ValidationException(ErrorCode.INVALID_AMOUNT);
     }
-
+    if (this.beforeAmount < 0 || this.afterAmount < 0) {
+      throw new ValidationException(ErrorCode.INVALID_AMOUNT);
+    }
     // BR-022: after_amount = before_amount + amount
     if (this.afterAmount !== this.beforeAmount + this.amount) {
-      throw new ValidationException('잔액 변경 계산이 일치하지 않습니다');
+      throw new ValidationException(ErrorCode.USER_LOG_INVALID_CALCULATION);
     }
-
-    if (this.beforeAmount < 0 || this.afterAmount < 0) {
-      throw new ValidationException('잔액은 0 이상이어야 합니다');
-    }
-  }
-
-  /**
-   * 로그 생성 팩토리 메서드
-   */
-  static create(
-    userId: number,
-    amount: number,
-    beforeAmount: number,
-    afterAmount: number,
-    code: BalanceChangeCode,
-    note: string | null = null,
-    refId: number | null = null,
-  ): UserBalanceChangeLog {
-    if (afterAmount !== beforeAmount + amount) {
-      throw new ValidationException('잔액 변경 계산이 일치하지 않습니다');
-    }
-
-    return new UserBalanceChangeLog(
-      0, // id는 DB에서 생성
-      userId,
-      amount,
-      beforeAmount,
-      afterAmount,
-      code,
-      note,
-      refId,
-      new Date(),
-    );
   }
 }
 
@@ -76,6 +46,5 @@ export class UserBalanceChangeLog {
 export enum BalanceChangeCode {
   SYSTEM_CHARGE = 'SYSTEM_CHARGE', // 관리자/시스템 충전
   PAYMENT = 'PAYMENT', // 주문 결제 차감
-  REFUND = 'REFUND', // 결제 취소/환불
   ADJUST = 'ADJUST', // 관리자 조정
 }

@@ -8,7 +8,7 @@ import {
   ParseIntPipe,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
-import { UserService } from '@application/user.service';
+import { UserFacade } from '@application/facades/user.facade';
 import {
   GetBalanceResponseDto,
   GetBalanceLogsQueryDto,
@@ -16,6 +16,7 @@ import {
   ChargeBalanceRequestDto,
   ChargeBalanceResponseDto,
 } from './dto';
+import { UserDomainService } from '@domain/user';
 
 /**
  * User Controller
@@ -24,10 +25,13 @@ import {
 @ApiTags('Users')
 @Controller('api/users')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userFacade: UserFacade,
+    private readonly userService: UserDomainService,
+  ) {}
 
   /**
-   * 잔액 조회 (US-004)
+   * ANCHOR 잔액 조회 (US-004)
    * GET /api/users/:userId/balance
    */
   @Get(':userId/balance')
@@ -46,11 +50,12 @@ export class UserController {
   async getBalance(
     @Param('userId', ParseIntPipe) userId: number,
   ): Promise<GetBalanceResponseDto> {
-    return await this.userService.getBalance(userId);
+    const balance = await this.userService.getUserBalance(userId);
+    return { userId, balance };
   }
 
   /**
-   * 잔액 충전
+   * ANCHOR 잔액 충전 (관리자 기능)
    * PATCH /api/users/:userId/balance
    */
   @Patch(':userId/balance')
@@ -71,15 +76,11 @@ export class UserController {
     @Param('userId', ParseIntPipe) userId: number,
     @Body() dto: ChargeBalanceRequestDto,
   ): Promise<ChargeBalanceResponseDto> {
-    const result = await this.userService.chargeBalance(userId, dto.amount);
-    return {
-      userId: result.user.id,
-      balance: result.user.balance,
-    };
+    return await this.userFacade.chargeBalance(userId, dto.amount);
   }
 
   /**
-   * 잔액 변경 이력 조회 (US-016)
+   * ANCHOR 잔액 변경 이력 조회 (US-016)
    * GET /api/users/:userId/balance/logs
    */
   @Get(':userId/balance/logs')
@@ -98,17 +99,10 @@ export class UserController {
   @ApiResponse({ status: 500, description: '서버 오류' })
   async getBalanceLogs(
     @Param('userId', ParseIntPipe) userId: number,
-    @Query() query: GetBalanceLogsQueryDto,
   ): Promise<GetBalanceLogsResponseDto> {
-    const filter = {
-      from: query.from ? new Date(query.from) : undefined,
-      to: query.to ? new Date(query.to) : undefined,
-      code: query.code,
-      refId: query.refId,
-      page: query.page,
-      size: query.size,
-    };
+    // TODO Filter
 
-    return await this.userService.getBalanceLogs(userId, filter);
+    const changeLogs = await this.userService.getUserBalanceChangeLogs(userId);
+    return changeLogs;
   }
 }

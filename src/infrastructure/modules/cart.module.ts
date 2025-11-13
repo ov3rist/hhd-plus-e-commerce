@@ -1,15 +1,10 @@
 import { Module } from '@nestjs/common';
-import { CartService } from '@application/cart.service';
-import {
-  ICartRepository,
-  IProductRepository,
-  IProductOptionRepository,
-} from '@application/interfaces';
-import {
-  CartRepository,
-  ProductRepository,
-  ProductOptionRepository,
-} from '@infrastructure/repositories';
+import { CartFacade } from '@application/facades/cart.facade';
+import { CartDomainService } from '@domain/cart';
+import { ProductDomainService } from '@domain/product';
+import { ProductModule } from './product.module';
+import { ICartRepository } from '@domain/interfaces';
+import { CartRepository } from '@infrastructure/repositories';
 import { CartController } from '@presentation/cart';
 
 /**
@@ -17,25 +12,22 @@ import { CartController } from '@presentation/cart';
  * 장바구니 관리 모듈
  */
 @Module({
+  imports: [ProductModule],
   controllers: [CartController],
   providers: [
+    // Cart Repository (자신의 도메인만)
     CartRepository,
-    ProductRepository,
-    ProductOptionRepository,
     {
       provide: ICartRepository,
       useClass: CartRepository,
     },
-    {
-      provide: IProductRepository,
-      useClass: ProductRepository,
-    },
-    {
-      provide: IProductOptionRepository,
-      useClass: ProductOptionRepository,
-    },
-    CartService,
+
+    // Domain Service
+    CartDomainService,
+
+    // Facade
+    CartFacade,
   ],
-  exports: [CartService],
+  exports: [CartDomainService, ICartRepository],
 })
 export class CartModule {}

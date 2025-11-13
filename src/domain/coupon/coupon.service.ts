@@ -1,0 +1,86 @@
+import { Injectable } from '@nestjs/common';
+import { DomainException } from '@domain/common/exceptions';
+import { ErrorCode } from '@domain/common/constants/error-code';
+import { Coupon } from './coupon.entity';
+import { UserCoupon } from './user-coupon.entity';
+import { ICouponRepository, IUserCouponRepository } from '@domain/interfaces';
+
+/**
+ * CouponDomainService
+ * 쿠폰 발급 및 조회에 대한 핵심 규칙을 담당한다.
+ */
+@Injectable()
+export class CouponDomainService {
+  constructor(
+    private readonly couponRepository: ICouponRepository,
+    private readonly userCouponRepository: IUserCouponRepository,
+  ) {}
+
+  /**
+   * ANCHOR 쿠폰 조회
+   */
+  async getCoupon(couponId: number): Promise<Coupon> {
+    const coupon = await this.couponRepository.findById(couponId);
+    if (!coupon) {
+      throw new DomainException(ErrorCode.COUPON_NOT_FOUND);
+    }
+    return coupon;
+  }
+
+  /**
+   * ANCHOR 사용자 쿠폰 목록 조회
+   */
+  async getUserCoupons(userId: number): Promise<UserCoupon[]> {
+    const userCoupons = await this.userCouponRepository.findByUserId(userId);
+    if (!userCoupons) {
+      throw new DomainException(ErrorCode.COUPON_INFO_NOT_FOUND);
+    }
+    return userCoupons;
+  }
+
+  /**
+   * ANCHOR 사용자 쿠폰 단건 조회
+   */
+  async getUserCoupon(userCouponId: number): Promise<UserCoupon> {
+    const userCoupon = await this.userCouponRepository.findById(userCouponId);
+    if (!userCoupon) {
+      throw new DomainException(ErrorCode.COUPON_NOT_FOUND);
+    }
+    return userCoupon;
+  }
+
+  /**
+   * ANCHOR 사용자 쿠폰 업데이트
+   */
+  async updateUserCoupon(userCoupon: UserCoupon): Promise<UserCoupon> {
+    return await this.userCouponRepository.update(userCoupon);
+  }
+
+  /**
+   * ANCHOR 쿠폰 발급
+   */
+  async issueCouponToUser(userId: number, coupon: Coupon): Promise<UserCoupon> {
+    // 중복 발급 여부 검증
+    const already = await this.userCouponRepository.findByUserCoupon(
+      userId,
+      coupon.id,
+    );
+    if (already) {
+      throw new DomainException(ErrorCode.ALREADY_ISSUED);
+    }
+
+    // 쿠폰 발급 가능 여부 확인 (수량 및 만료일)
+    if (!coupon.canIssue()) {
+      throw new DomainException(ErrorCode.COUPON_SOLD_OUT);
+    }
+
+    // 쿠폰 발급 처리 (도메인 규칙에 따라 쿠폰 수량 차감)
+    coupon.issue();
+    await this.couponRepository.update(coupon); // save
+
+    const userCoupon = UserCoupon.issue(userId, coupon);
+    const savedUserCoupon = await this.userCouponRepository.create(userCoupon); // save
+
+    return savedUserCoupon;
+  }
+}
