@@ -7,9 +7,14 @@ import {
   CouponModule,
   SchedulerModule,
 } from '@infrastructure/modules';
+import { GlobalPrismaModule } from '@infrastructure/prisma/prisma.module';
 
 @Module({
   imports: [
+    // GLOBAL
+    GlobalPrismaModule,
+
+    // APP MODULES
     ProductModule,
     UserModule,
     CartModule,
