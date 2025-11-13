@@ -12,8 +12,15 @@ import { Product } from '@domain/product/product.entity';
 import { ProductOption } from '@domain/product/product-option.entity';
 import { User } from '@domain/user/user.entity';
 import { OrderStatus } from '@domain/order/order-status.vo';
+import { PrismaService } from '@infrastructure/prisma/prisma.service';
+import {
+  setupIntegrationTest,
+  cleanupDatabase,
+  teardownIntegrationTest,
+} from './setup';
 
 describe('OrderExpirationScheduler Integration Tests', () => {
+  let prismaService: PrismaService;
   let scheduler: OrderExpirationScheduler;
   let orderRepository: OrderRepository;
   let orderItemRepository: OrderItemRepository;
@@ -21,12 +28,22 @@ describe('OrderExpirationScheduler Integration Tests', () => {
   let productOptionRepository: ProductOptionRepository;
   let userRepository: UserRepository;
 
-  beforeEach(() => {
-    orderRepository = new OrderRepository();
-    orderItemRepository = new OrderItemRepository();
-    productRepository = new ProductRepository();
-    productOptionRepository = new ProductOptionRepository();
-    userRepository = new UserRepository();
+  beforeAll(async () => {
+    prismaService = await setupIntegrationTest();
+  }, 60000); // 60초 타임아웃
+
+  afterAll(async () => {
+    await teardownIntegrationTest();
+  });
+
+  beforeEach(async () => {
+    await cleanupDatabase(prismaService);
+
+    orderRepository = new OrderRepository(prismaService);
+    orderItemRepository = new OrderItemRepository(prismaService);
+    productRepository = new ProductRepository(prismaService);
+    productOptionRepository = new ProductOptionRepository(prismaService);
+    userRepository = new UserRepository(prismaService);
 
     scheduler = new OrderExpirationScheduler(
       orderRepository,

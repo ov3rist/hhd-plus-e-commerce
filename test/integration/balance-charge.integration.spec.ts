@@ -5,20 +5,39 @@ import {
   UserBalanceChangeLogRepository,
 } from '@infrastructure/repositories/prisma';
 import { User } from '@domain/user/user.entity';
+import { PrismaService } from '@infrastructure/prisma/prisma.service';
+import {
+  setupIntegrationTest,
+  cleanupDatabase,
+  teardownIntegrationTest,
+} from './setup';
 
 describe('잔액 충전 통합 테스트 (관리자 기능)', () => {
+  let prismaService: PrismaService;
   let userFacade: UserFacade;
   let userRepository: UserRepository;
 
-  beforeEach(() => {
-    userRepository = new UserRepository();
-    const balanceLogRepository = new UserBalanceChangeLogRepository();
+  beforeAll(async () => {
+    prismaService = await setupIntegrationTest();
+  }, 60000); // 60초 타임아웃
+
+  afterAll(async () => {
+    await teardownIntegrationTest();
+  });
+
+  beforeEach(async () => {
+    await cleanupDatabase(prismaService);
+
+    userRepository = new UserRepository(prismaService);
+    const balanceLogRepository = new UserBalanceChangeLogRepository(
+      prismaService,
+    );
     const userDomainService = new UserDomainService(
       userRepository,
       balanceLogRepository,
     );
 
-    userFacade = new UserFacade(userDomainService);
+    userFacade = new UserFacade(userDomainService, prismaService);
   });
 
   describe('user.balance 동시성', () => {
