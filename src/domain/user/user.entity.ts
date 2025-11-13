@@ -15,15 +15,15 @@ export class User {
   constructor(
     public readonly id: number,
     public balance: number,
-    public readonly createdAt: Date,
-    public updatedAt: Date,
+    public readonly createdAt: Date = new Date(),
+    public updatedAt: Date = new Date(),
   ) {
     this.validateBalance();
   }
 
   private validateBalance(): void {
-    if (this.balance < 0) {
-      throw new ValidationException('잔액은 0 이상이어야 합니다');
+    if (this.balance < 0 || !Number.isInteger(this.balance)) {
+      throw new DomainException(ErrorCode.INVALID_USER_BALANCE);
     }
   }
 
@@ -34,11 +34,11 @@ export class User {
    */
   charge(
     amount: number,
-    note: string | null = null,
     refId?: number,
-  ): UserBalanceChangeLog {
+    note?: string,
+  ): { user: User; log: UserBalanceChangeLog } {
     if (amount <= 0) {
-      throw new ValidationException('충전 금액은 0보다 커야 합니다');
+      throw new DomainException(ErrorCode.INVALID_AMOUNT);
     }
 
     const beforeAmount = this.balance;
@@ -46,15 +46,21 @@ export class User {
     const afterAmount = this.balance;
     this.updatedAt = new Date();
 
-    return UserBalanceChangeLog.create(
+    this.validateBalance();
+
+    const log = new UserBalanceChangeLog(
+      0, // ID는 나중에 할당
       this.id,
       amount,
       beforeAmount,
       afterAmount,
       BalanceChangeCode.SYSTEM_CHARGE,
-      note,
+      note ?? null,
       refId ?? null,
+      new Date(),
     );
+
+    return { user: this, log };
   }
 
   /**
@@ -65,11 +71,11 @@ export class User {
    */
   deduct(
     amount: number,
-    note: string | null = null,
-    refId: number,
-  ): UserBalanceChangeLog {
+    refId?: number,
+    note?: string,
+  ): { user: User; log: UserBalanceChangeLog } {
     if (amount <= 0) {
-      throw new ValidationException('차감 금액은 0보다 커야 합니다');
+      throw new DomainException(ErrorCode.INVALID_AMOUNT);
     }
     if (this.balance < amount) {
       throw new DomainException(ErrorCode.INSUFFICIENT_BALANCE);
@@ -80,49 +86,19 @@ export class User {
     const afterAmount = this.balance;
     this.updatedAt = new Date();
 
-    return UserBalanceChangeLog.create(
+    this.validateBalance();
+
+    const log = new UserBalanceChangeLog(
+      0, // ID는 나중에 할당
       this.id,
-      -amount, // 차감은 음수
+      -amount,
       beforeAmount,
       afterAmount,
       BalanceChangeCode.PAYMENT,
-      note,
-      refId,
-    );
-  }
-
-  /**
-   * 잔액 조정 및 로그 생성 (관리자용)
-   * amount가 양수면 증액, 음수면 차감
-   */
-  adjust(
-    amount: number,
-    note: string | null = null,
-    refId?: number,
-  ): UserBalanceChangeLog {
-    if (amount === 0) {
-      throw new ValidationException('조정 금액은 0이 될 수 없습니다');
-    }
-
-    const beforeAmount = this.balance;
-    this.balance += amount;
-
-    if (this.balance < 0) {
-      this.balance = beforeAmount; // 롤백
-      throw new ValidationException('잔액은 0 미만이 될 수 없습니다');
-    }
-
-    const afterAmount = this.balance;
-    this.updatedAt = new Date();
-
-    return UserBalanceChangeLog.create(
-      this.id,
-      amount,
-      beforeAmount,
-      afterAmount,
-      BalanceChangeCode.ADJUST,
-      note,
+      note ?? null,
       refId ?? null,
     );
+
+    return { user: this, log };
   }
 }

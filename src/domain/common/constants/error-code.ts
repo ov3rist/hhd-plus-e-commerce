@@ -113,9 +113,25 @@ export const ErrorCode = {
     message: '권한이 없습니다',
   },
 
+  // User Balance Change Log
+  INVALID_USER_BALANCE: {
+    code: 'UBC001',
+    message: '잔액은 0이상 정수여야 합니다',
+  },
+  USER_LOG_INVALID_CALCULATION: {
+    code: 'UBC002',
+    message: '잔액 변경 계산이 일치하지 않음',
+  },
+
   // Cart
   CART_ITEM_NOT_FOUND: {
     code: 'CART001',
     message: '장바구니 항목을 찾을 수 없음',
+  },
+
+  // Numbering
+  INVALID_AMOUNT: {
+    code: 'D001',
+    message: '수량은 0 이상 정수여야 합니다',
   },
 } as const;

@@ -3,22 +3,21 @@ import {
   IUserBalanceChangeLogRepository,
   IUserRepository,
 } from '@domain/interfaces';
-import { DomainException } from '@domain/common/exceptions';
+import {
+  DomainException,
+  ValidationException,
+} from '@domain/common/exceptions';
 import { ErrorCode } from '@domain/common/constants/error-code';
 import { User } from './user.entity';
-import { UserBalanceChangeLog } from './user-balance-change-log.entity';
+import {
+  BalanceChangeCode,
+  UserBalanceChangeLog,
+} from './user-balance-change-log.entity';
 
-export interface BalanceLogQuery {
-  from?: Date;
-  to?: Date;
-  code?: string;
-  refId?: number;
-  page?: number;
-  size?: number;
-}
-
-export interface BalanceLogResult {
+export interface GetBalanceLogsDto {
   logs: UserBalanceChangeLog[];
+  page: number;
+  size: number;
   total: number;
 }
 
@@ -34,8 +33,24 @@ export class UserDomainService {
   ) {}
 
   /**
-   * 사용자 조회 (없으면 예외)
+   * ANCHOR 사용자 조회
    */
+  async getUser(userId: number): Promise<User> {
+    const user = await this.userRepository.findById(userId);
+    if (!user) {
+      throw new ValidationException(ErrorCode.USER_NOT_FOUND);
+    }
+
+    return user;
+  }
+
+  /**
+   * ANCHOR 사용자 잔액 조회
+   */
+  async getUserBalance(userId: number): Promise<number> {
+    const user = await this.loadUserOrFail(userId);
+    return user.balance;
+  }
   async loadUserOrFail(userId: number): Promise<User> {
     const user = await this.userRepository.findById(userId);
     if (!user) {
@@ -45,52 +60,83 @@ export class UserDomainService {
   }
 
   /**
-   * 잔액 변경 로그 조회
+   * ANCHOR 잔액 충전 처리
    */
-  async fetchBalanceLogs(
+  async chargeUser(
     userId: number,
-    filter: BalanceLogQuery,
-  ): Promise<BalanceLogResult> {
-    return this.balanceLogRepository.findByUserIdWithFilter(userId, filter);
-  }
-
-  /**
-   * 잔액 충전 처리
-   */
-  chargeUser(
-    user: User,
     amount: number,
-    note: string | null = '관리자 잔액 충전',
     refId?: number,
-  ): UserBalanceChangeLog {
-    return user.charge(amount, note, refId);
+    note?: string,
+  ): Promise<User> {
+    const _user = await this.getUser(userId);
+    const { user, log } = _user.charge(amount, refId, note); // Log도 함께 생성
+
+    await this.userRepository.update(user);
+    await this.balanceLogRepository.create(log);
+
+    return user;
   }
 
   /**
-   * 잔액 차감 처리
+   * ANCHOR 잔액 차감 처리
    */
-  deductUser(
-    user: User,
+  async deductUser(
+    userId: number,
     amount: number,
-    note: string | null,
-    refId: number,
-  ): UserBalanceChangeLog {
-    return user.deduct(amount, note, refId);
+    refId?: number,
+    note?: string,
+  ): Promise<User> {
+    const _user = await this.getUser(userId);
+    const { user, log } = _user.deduct(amount, refId, note); // Log도 함께 생성
+
+    await this.userRepository.update(user);
+    await this.balanceLogRepository.create(log);
+
+    return user;
   }
 
   /**
-   * 사용자 저장
+   * ANCHOR 잔액 변경 이력 조회
+   * RF-022: 시스템은 사용자의 잔액 변경 이력을 조회할 수 있어야 한다
    */
-  async persistUser(user: User): Promise<User> {
-    return this.userRepository.save(user);
+  async getUserBalanceChangeLogs(userId: number): Promise<GetBalanceLogsDto> {
+    const logs = await this.balanceLogRepository.findByUserId(userId);
+    return { logs, page: 1, size: logs.length, total: logs.length };
   }
 
   /**
-   * 잔액 로그 저장
+   * ANCHOR 사용자 저장
    */
-  async persistBalanceLog(
-    log: UserBalanceChangeLog,
+  async createUser(): Promise<User> {
+    const user = new User(0, 0);
+    return this.userRepository.create(user);
+  }
+
+  /**
+   * ANCHOR 잔액 변경 이력 저장
+   */
+  async createUserBalanceChangeLog(
+    userId: number,
+    beforeAmount: number,
+    amount: number,
+    code: BalanceChangeCode,
+    note?: string,
+    refId?: number,
   ): Promise<UserBalanceChangeLog> {
-    return this.balanceLogRepository.save(log);
+    const afterAmount = beforeAmount + amount;
+
+    const log = new UserBalanceChangeLog(
+      0, // ID는 나중에 할당
+      userId,
+      amount,
+      beforeAmount,
+      afterAmount,
+      code,
+      note ?? null,
+      refId ?? null,
+    );
+
+    const createdLog = await this.balanceLogRepository.create(log);
+    return createdLog;
   }
 }
