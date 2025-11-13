@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { IOrderItemRepository, IOrderRepository } from '@domain/interfaces';
 import { Order } from './order.entity';
 import { OrderItem } from './order-item.entity';
+import { OrderStatus } from './order-status.vo';
+import { OrderItemData } from './order.types';
 import { ValidationException } from '@domain/common/exceptions';
 import { ErrorCode } from '@domain/common/constants/error-code';
 
@@ -30,6 +32,63 @@ export class OrderDomainService {
   async createOrderItem(orderItem: OrderItem): Promise<OrderItem> {
     const createdOrderItem = await this.orderItemRepository.create(orderItem);
     return createdOrderItem;
+  }
+
+  /**
+   * ANCHOR 주문 아이템 일괄 생성
+   */
+  async createOrderItems(
+    orderId: number,
+    itemsData: OrderItemData[],
+  ): Promise<OrderItem[]> {
+    const now = new Date();
+    const orderItems = itemsData.map(
+      (data) =>
+        new OrderItem(
+          0,
+          orderId,
+          data.productOptionId,
+          data.productName,
+          data.price,
+          data.quantity,
+          data.price * data.quantity,
+          now,
+        ),
+    );
+    return await this.orderItemRepository.createMany(orderItems);
+  }
+
+  /**
+   * ANCHOR 주문 엔티티 생성 (10분 후 만료)
+   */
+  async createPendingOrder(
+    userId: number,
+    totalAmount: number,
+  ): Promise<Order> {
+    const now = new Date();
+    const expiredAt = new Date(now.getTime() + 10 * 60 * 1000);
+
+    const order = new Order(
+      0,
+      userId,
+      null,
+      totalAmount,
+      0,
+      totalAmount,
+      OrderStatus.PENDING,
+      now,
+      null,
+      expiredAt,
+      now,
+    );
+    return await this.orderRepository.create(order);
+  }
+
+  /**
+   * ANCHOR 주문 업데이트
+   */
+  async updateOrder(order: Order): Promise<Order> {
+    return await this.orderRepository.update(order);
   }
 
   /**

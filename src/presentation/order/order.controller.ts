@@ -51,8 +51,11 @@ export class OrderController {
   async createOrder(
     @Body() dto: CreateOrderRequestDto,
   ): Promise<CreateOrderResponseDto> {
-    await this.orderFacade.createOrder(dto.userId, dto.items);
-    TODO;
+    const orderCreateView = await this.orderFacade.createOrder(
+      dto.userId,
+      dto.items,
+    );
+    return orderCreateView;
   }
 
   /**
@@ -77,7 +80,12 @@ export class OrderController {
     @Param('orderId', ParseIntPipe) orderId: number,
     @Body() dto: ProcessPaymentRequestDto,
   ): Promise<ProcessPaymentResponseDto> {
-    TODO;
+    const paymentView = await this.orderFacade.processPayment(
+      orderId,
+      dto.userId,
+      dto.userCouponId,
+    );
+    return paymentView;
   }
 
   /**

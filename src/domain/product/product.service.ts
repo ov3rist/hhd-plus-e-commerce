@@ -9,6 +9,7 @@ import { ProductOption } from './product-option.entity';
 import { ProductPopularitySnapshot } from './product-popularity-snapshot.entity';
 import { ValidationException } from '@domain/common/exceptions';
 import { ErrorCode } from '@domain/common/constants/error-code';
+import { OrderItemData } from '@domain/order';
 
 /**
  * ProductDomainService
@@ -99,5 +100,31 @@ export class ProductDomainService {
     }
 
     await this.productOptionRepository.update(option); // save
+  }
+
+  /**
+   * ANCHOR 주문용 상품 정보 조회 및 재고 선점
+   */
+  async reserveProductsForOrder(
+    items: Array<{ productOptionId: number; quantity: number }>,
+  ): Promise<OrderItemData[]> {
+    const orderItemsData: OrderItemData[] = [];
+
+    for (const item of items) {
+      const productOption = await this.getProductOption(item.productOptionId);
+      const product = await this.getProduct(productOption.productId);
+
+      productOption.reserveStock(item.quantity);
+      await this.productOptionRepository.update(productOption);
+
+      orderItemsData.push({
+        productName: product.name,
+        price: product.price,
+        productOptionId: productOption.id,
+        quantity: item.quantity,
+      });
+    }
+
+    return orderItemsData;
   }
 }

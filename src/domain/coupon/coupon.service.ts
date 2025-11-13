@@ -39,6 +39,24 @@ export class CouponDomainService {
   }
 
   /**
+   * ANCHOR 사용자 쿠폰 단건 조회
+   */
+  async getUserCoupon(userCouponId: number): Promise<UserCoupon> {
+    const userCoupon = await this.userCouponRepository.findById(userCouponId);
+    if (!userCoupon) {
+      throw new DomainException(ErrorCode.COUPON_NOT_FOUND);
+    }
+    return userCoupon;
+  }
+
+  /**
+   * ANCHOR 사용자 쿠폰 업데이트
+   */
+  async updateUserCoupon(userCoupon: UserCoupon): Promise<UserCoupon> {
+    return await this.userCouponRepository.update(userCoupon);
+  }
+
+  /**
    * ANCHOR 쿠폰 발급
    */
   async issueCouponToUser(userId: number, coupon: Coupon): Promise<UserCoupon> {

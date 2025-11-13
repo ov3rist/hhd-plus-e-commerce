@@ -88,6 +88,23 @@ export class Order {
   }
 
   /**
+   * ANCHOR 쿠폰 적용
+   */
+  applyCoupon(couponId: number, discountAmount: number): void {
+    if (discountAmount < 0) {
+      throw new ValidationException(ErrorCode.INVALID_AMOUNT);
+    }
+    if (discountAmount > this.totalAmount) {
+      throw new ValidationException(ErrorCode.INVALID_AMOUNT);
+    }
+
+    this.couponId = couponId;
+    this.discountAmount = discountAmount;
+    this.finalAmount = this.totalAmount - discountAmount;
+    this.updatedAt = new Date();
+  }
+
+  /**
    * ANCHOR 주문 만료 처리
    */
   expire(): void {
