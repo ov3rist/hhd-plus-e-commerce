@@ -1,0 +1,192 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model cart_items {
+  id                BigInt          @id @default(autoincrement())
+  user_id           Int
+  product_option_id Int
+  quantity          Int             @default(1)
+  created_at        DateTime        @default(now()) @db.Timestamp(0)
+  updated_at        DateTime        @default(now()) @db.Timestamp(0)
+  users             users           @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "cart_items_ibfk_1")
+  product_options   product_options @relation(fields: [product_option_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "cart_items_ibfk_2")
+
+  @@unique([user_id, product_option_id], map: "uk_user_product_option")
+  @@index([user_id], map: "idx_user_id")
+  @@index([product_option_id], map: "product_option_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model coupons {
+  id              Int            @id @default(autoincrement())
+  name            String         @db.VarChar(255)
+  discount_rate   Decimal        @db.Decimal(5, 2)
+  total_quantity  Int
+  issued_quantity Int            @default(0)
+  expired_at      DateTime       @db.Timestamp(0)
+  created_at      DateTime       @default(now()) @db.Timestamp(0)
+  updated_at      DateTime       @default(now()) @db.Timestamp(0)
+  orders          orders[]
+  user_coupons    user_coupons[]
+
+  @@index([expired_at], map: "idx_expired_at")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model order_items {
+  id                BigInt          @id @default(autoincrement())
+  order_id          BigInt
+  product_option_id Int
+  product_name      String          @db.VarChar(255)
+  price             Decimal         @db.Decimal(13, 0)
+  quantity          Int
+  subtotal          Decimal         @db.Decimal(13, 0)
+  created_at        DateTime        @default(now()) @db.Timestamp(0)
+  orders            orders          @relation(fields: [order_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "order_items_ibfk_1")
+  product_options   product_options @relation(fields: [product_option_id], references: [id], onUpdate: NoAction, map: "order_items_ibfk_2")
+
+  @@index([order_id], map: "idx_order_id")
+  @@index([product_option_id], map: "product_option_id")
+}
+
+model orders {
+  id                          BigInt                        @id @default(autoincrement())
+  user_id                     Int
+  coupon_id                   Int?
+  total_amount                Decimal                       @db.Decimal(13, 0)
+  discount_amount             Decimal                       @default(0) @db.Decimal(13, 0)
+  final_amount                Decimal                       @db.Decimal(13, 0)
+  status                      String                        @default("PENDING") @db.VarChar(20)
+  created_at                  DateTime                      @default(now()) @db.Timestamp(0)
+  paid_at                     DateTime?                     @db.Timestamp(0)
+  expired_at                  DateTime                      @db.Timestamp(0)
+  updated_at                  DateTime                      @default(now()) @db.Timestamp(0)
+  order_items                 order_items[]
+  users                       users                         @relation(fields: [user_id], references: [id], onUpdate: NoAction, map: "orders_ibfk_1")
+  coupons                     coupons?                      @relation(fields: [coupon_id], references: [id], onDelete: Restrict, onUpdate: NoAction, map: "orders_ibfk_2")
+  transaction_out_failure_log transaction_out_failure_log[]
+  user_coupons                user_coupons[]
+
+  @@index([coupon_id], map: "coupon_id")
+  @@index([created_at], map: "idx_created_at")
+  @@index([paid_at], map: "idx_paid_at")
+  @@index([user_id], map: "idx_user_id")
+}
+
+model product_options {
+  id             Int           @id @default(autoincrement())
+  product_id     Int
+  color          String?       @db.VarChar(50)
+  size           String?       @db.VarChar(50)
+  stock          Int           @default(0)
+  reserved_stock Int           @default(0)
+  created_at     DateTime      @default(now()) @db.Timestamp(0)
+  updated_at     DateTime      @default(now()) @db.Timestamp(0)
+  cart_items     cart_items[]
+  order_items    order_items[]
+  products       products      @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "product_options_ibfk_1")
+
+  @@index([id], map: "idx_id")
+  @@index([product_id], map: "product_id")
+}
+
+model product_popularity_snapshot {
+  id           Int       @id @default(autoincrement())
+  product_id   Int
+  product_name String    @db.VarChar(255)
+  price        Decimal   @db.Decimal(13, 0)
+  category     String    @db.VarChar(100)
+  rank         Int
+  sales_count  Int
+  last_sold_at DateTime? @db.Timestamp(0)
+  created_at   DateTime  @default(now()) @db.Timestamp(0)
+  products     products  @relation(fields: [product_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "product_popularity_snapshot_ibfk_1")
+
+  @@index([created_at], map: "idx_created_at")
+  @@index([rank], map: "idx_rank")
+  @@index([product_id], map: "product_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model products {
+  id                          Int                           @id @default(autoincrement())
+  name                        String                        @db.VarChar(255)
+  description                 String?                       @db.Text
+  price                       Decimal                       @db.Decimal(13, 0)
+  category                    String                        @db.VarChar(100)
+  is_available                Boolean                       @default(true)
+  created_at                  DateTime                      @default(now()) @db.Timestamp(0)
+  updated_at                  DateTime                      @default(now()) @db.Timestamp(0)
+  product_options             product_options[]
+  product_popularity_snapshot product_popularity_snapshot[]
+
+  @@index([id], map: "idx_id")
+}
+
+model transaction_out_failure_log {
+  id            Int      @id @default(autoincrement())
+  order_id      BigInt
+  payload       String   @db.Text
+  error_message String?  @db.Text
+  retry_count   Int      @default(0)
+  created_at    DateTime @default(now()) @db.Timestamp(0)
+  orders        orders   @relation(fields: [order_id], references: [id], onUpdate: NoAction, map: "transaction_out_failure_log_ibfk_1")
+
+  @@index([created_at], map: "idx_created_at")
+  @@index([order_id], map: "idx_order_id")
+}
+
+/// This model or at least one of its fields has comments in the database, and requires an additional setup for migrations: Read more: https://pris.ly/d/database-comments
+model user_balance_change_log {
+  id            BigInt   @id @default(autoincrement())
+  user_id       Int
+  amount        Decimal  @db.Decimal(13, 0)
+  before_amount Decimal  @db.Decimal(13, 0)
+  after_amount  Decimal  @db.Decimal(13, 0)
+  code          String   @db.VarChar(50)
+  note          String?  @db.Text
+  ref_id        BigInt?
+  created_at    DateTime @default(now()) @db.Timestamp(0)
+  users         users    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_balance_change_log_ibfk_1")
+
+  @@index([user_id], map: "idx_user_id")
+}
+
+model user_coupons {
+  id         BigInt    @id @default(autoincrement())
+  user_id    Int
+  coupon_id  Int
+  order_id   BigInt?
+  created_at DateTime  @default(now()) @db.Timestamp(0)
+  used_at    DateTime? @db.Timestamp(0)
+  expired_at DateTime  @db.Timestamp(0)
+  updated_at DateTime  @default(now()) @db.Timestamp(0)
+  users      users     @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_coupons_ibfk_1")
+  coupons    coupons   @relation(fields: [coupon_id], references: [id], onUpdate: NoAction, map: "user_coupons_ibfk_2")
+  orders     orders?   @relation(fields: [order_id], references: [id], onUpdate: NoAction, map: "user_coupons_ibfk_3")
+
+  @@unique([user_id, coupon_id], map: "uk_user_coupon")
+  @@index([coupon_id], map: "idx_coupon_id")
+  @@index([expired_at], map: "idx_expired_at")
+  @@index([user_id], map: "idx_user_id")
+  @@index([order_id], map: "order_id")
+}
+
+model users {
+  id                      Int                       @id @default(autoincrement())
+  balance                 Decimal                   @default(0) @db.Decimal(13, 0)
+  created_at              DateTime                  @default(now()) @db.Timestamp(0)
+  updated_at              DateTime                  @default(now()) @db.Timestamp(0)
+  cart_items              cart_items[]
+  orders                  orders[]
+  user_balance_change_log user_balance_change_log[]
+  user_coupons            user_coupons[]
+
+  @@index([id], map: "idx_id")
+}
