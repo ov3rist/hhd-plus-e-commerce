@@ -8,8 +8,9 @@ import { OrderItem } from '@domain/order/order-item.entity';
 export abstract class IOrderRepository {
   abstract findById(id: number): Promise<Order | null>;
   abstract findByUserId(userId: number): Promise<Order[]>;
-  abstract save(order: Order): Promise<Order>;
   abstract findExpiredPendingOrders(): Promise<Order[]>;
+  abstract create(order: Order): Promise<Order>;
+  abstract update(order: Order): Promise<Order>;
 }
 
 /**
@@ -18,7 +19,7 @@ export abstract class IOrderRepository {
  */
 export abstract class IOrderItemRepository {
   abstract findByOrderId(orderId: number): Promise<OrderItem[]>;
-  abstract save(orderItem: OrderItem): Promise<OrderItem>;
-  abstract saveAll(orderItems: OrderItem[]): Promise<OrderItem[]>;
   abstract findRecentPaidOrderItems(days: number): Promise<OrderItem[]>;
+  abstract create(orderItem: OrderItem): Promise<OrderItem>;
+  abstract createMany(orderItems: OrderItem[]): Promise<OrderItem[]>;
 }
