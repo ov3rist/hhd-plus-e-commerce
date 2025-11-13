@@ -127,4 +127,20 @@ export class ProductDomainService {
 
     return orderItemsData;
   }
+
+  /**
+   * ANCHOR 결제 완료 시 재고 확정 차감
+   */
+  async confirmPaymentStock(
+    productOptionId: number,
+    quantity: number,
+  ): Promise<void> {
+    const option = await this.productOptionRepository.findById(productOptionId);
+    if (!option) {
+      throw new ValidationException(ErrorCode.PRODUCT_OPTION_NOT_FOUND);
+    }
+
+    option.decreaseStock(quantity);
+    await this.productOptionRepository.update(option);
+  }
 }
