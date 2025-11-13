@@ -28,7 +28,7 @@ export class Coupon {
    */
   private validateDiscountRate(): void {
     if (this.discountRate <= 0 || this.discountRate > 100) {
-      throw new ValidationException('할인율은 0보다 크고 100 이하여야 합니다');
+      throw new ValidationException(ErrorCode.INVALID_DISCOUNT_RATE);
     }
   }
 
@@ -37,15 +37,13 @@ export class Coupon {
    */
   private validateQuantity(): void {
     if (this.totalQuantity < 0) {
-      throw new ValidationException('총 수량은 0 이상이어야 합니다');
+      throw new ValidationException(ErrorCode.INVALID_ISSUE_QUANTITY);
     }
     if (this.issuedQuantity < 0) {
-      throw new ValidationException('발급된 수량은 0 이상이어야 합니다');
+      throw new ValidationException(ErrorCode.INVALID_ISSUE_QUANTITY);
     }
     if (this.issuedQuantity > this.totalQuantity) {
-      throw new ValidationException(
-        '발급된 수량이 총 수량을 초과할 수 없습니다',
-      );
+      throw new ValidationException(ErrorCode.INVALID_ISSUE_QUANTITY);
     }
   }
 
@@ -93,17 +91,17 @@ export class Coupon {
    */
   calculateDiscount(amount: number): number {
     if (amount < 0) {
-      throw new ValidationException('금액은 0 이상이어야 합니다');
+      throw new ValidationException(ErrorCode.INVALID_DISCOUNT_RATE);
     }
 
-    const discountAmount = (amount * this.discountRate) / 100;
-    return Math.floor(discountAmount); // 소숫점 첫 번째 자리에서 버림
+    const discountAmount = (amount * this.discountRate) / 100; // TODO 넘버링 정책
+    return Math.floor(discountAmount);
   }
 
   /**
    * 남은 발급 가능 수량 조회
    */
-  getRemainingQuantity(): number {
+  getRemain(): number {
     return Math.max(0, this.totalQuantity - this.issuedQuantity);
   }
 }

@@ -28,8 +28,5 @@ export class IssueCouponResponseDto {
   discountRate: number;
 
   @ApiProperty({ description: '만료 시각' })
-  expiresAt: Date;
-
-  @ApiProperty({ description: '남은 수량' })
-  remainingQuantity: number;
+  expiredAt: Date;
 }

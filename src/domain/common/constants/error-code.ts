@@ -94,6 +94,14 @@ export const ErrorCode = {
     code: 'C007',
     message: '쿠폰 정보를 찾을 수 없습니다',
   },
+  INVALID_DISCOUNT_RATE: {
+    code: 'C008',
+    message: '잘못된 할인율',
+  },
+  INVALID_ISSUE_QUANTITY: {
+    code: 'C009',
+    message: '잘못된 발급 수량',
+  },
 
   // User
   USER_NOT_FOUND: {

@@ -14,7 +14,6 @@ import { CouponFacade } from '@application/facades/coupon.facade';
 import {
   IssueCouponRequestDto,
   IssueCouponResponseDto,
-  GetUserCouponsQueryDto,
   GetUserCouponsResponseDto,
 } from './dto';
 
@@ -68,8 +67,8 @@ export class CouponController {
   @ApiResponse({ status: 404, description: '사용자를 찾을 수 없음' })
   async getUserCoupons(
     @Param('userId', ParseIntPipe) userId: number,
-    @Query() query: GetUserCouponsQueryDto,
   ): Promise<GetUserCouponsResponseDto> {
-    return this.couponFacade.getUserCoupons(userId, query.status);
+    const coupons = await this.couponFacade.getUserCoupons(userId);
+    return { coupons };
   }
 }

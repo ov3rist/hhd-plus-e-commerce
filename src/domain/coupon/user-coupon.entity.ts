@@ -46,17 +46,6 @@ export class UserCoupon {
   }
 
   /**
-   * 사용자가 이미 해당 쿠폰을 발급받았는지 확인
-   * BR-006: 하나의 쿠폰은 사용자당 1회만 발급 가능
-   */
-  static isAlreadyIssued(
-    existingUserCoupons: UserCoupon[],
-    couponId: number,
-  ): boolean {
-    return existingUserCoupons.some((uc) => uc.couponId === couponId);
-  }
-
-  /**
    * 쿠폰 사용 가능 여부 확인
    * BR-007: 발급된 쿠폰은 지정된 만료일까지만 사용 가능하다
    * BR-008: 사용된 쿠폰은 재사용할 수 없다
