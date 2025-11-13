@@ -21,17 +21,32 @@ export class ProductOption {
     this.validateStock();
   }
 
+  // static create(
+  //   productId: number,
+  //   color: string | null,
+  //   size: string | null,
+  //   stock: number,
+  // ): ProductOption {
+  //   const now = new Date();
+  //   return new ProductOption(0, productId, color, size, stock, 0, now, now);
+  // }
+
+  /**
+   * 재고 검증
+   */
   private validateStock(): void {
     if (this.stock < 0 || this.reservedStock < 0) {
-      throw new ValidationException('재고는 0 이상이어야 합니다');
+      throw new ValidationException(ErrorCode.INVALID_STOCK_QUANTITY);
     }
     if (this.reservedStock > this.stock) {
-      throw new ValidationException(
-        '선점 재고는 전체 재고를 초과할 수 없습니다',
-      );
+      throw new ValidationException(ErrorCode.INVALID_STOCK_QUANTITY);
     }
   }
 
+  /**
+   * 사용 가능한 재고 조회
+   * BR-001: 재고가 0 이하인 상품은 주문할 수 없다
+   */
   get availableStock(): number {
     return this.stock - this.reservedStock;
   }
@@ -41,12 +56,7 @@ export class ProductOption {
    * BR-002: 주문 가능 수량은 (현재 재고 - 선점된 재고) 기준
    */
   reserveStock(quantity: number): void {
-    if (quantity <= 0) {
-      throw new DomainException(ErrorCode.INVALID_STOCK_QUANTITY);
-    }
-    if (this.availableStock < quantity) {
-      throw new DomainException(ErrorCode.INSUFFICIENT_STOCK);
-    }
+    this.validateStock();
     this.reservedStock += quantity;
   }
 
@@ -55,12 +65,7 @@ export class ProductOption {
    * BR-003: 결제 완료 시점에 재고가 확정 차감
    */
   decreaseStock(quantity: number): void {
-    if (quantity <= 0) {
-      throw new DomainException(ErrorCode.INVALID_STOCK_QUANTITY);
-    }
-    if (this.reservedStock < quantity) {
-      throw new ValidationException('선점된 재고가 부족합니다');
-    }
+    this.validateStock();
     this.stock -= quantity;
     this.reservedStock -= quantity;
   }
@@ -70,19 +75,7 @@ export class ProductOption {
    * BR-004: 결제 실패 또는 주문 취소 시 선점된 재고는 즉시 해제
    */
   releaseReservedStock(quantity: number): void {
-    if (quantity <= 0) {
-      throw new DomainException(ErrorCode.INVALID_STOCK_QUANTITY);
-    }
-    if (this.reservedStock < quantity) {
-      throw new ValidationException('해제할 선점 재고가 부족합니다');
-    }
+    this.validateStock();
     this.reservedStock -= quantity;
-  }
-
-  /**
-   * BR-001: 재고가 0 이하인 상품은 주문할 수 없다
-   */
-  canBeOrdered(): boolean {
-    return this.availableStock > 0;
   }
 }

@@ -14,4 +14,27 @@ export class ProductPopularitySnapshot {
     public readonly lastSoldAt: Date | null,
     public readonly createdAt: Date,
   ) {}
+
+  // static create(
+  //   productId: number,
+  //   productName: string,
+  //   price: number,
+  //   category: string,
+  //   rank: number,
+  //   salesCount: number,
+  //   lastSoldAt: Date | null,
+  // ): ProductPopularitySnapshot {
+  //   const now = new Date();
+  //   return new ProductPopularitySnapshot(
+  //     0,
+  //     productId,
+  //     productName,
+  //     price,
+  //     category,
+  //     rank,
+  //     salesCount,
+  //     lastSoldAt,
+  //     now,
+  //   );
+  // }
 }

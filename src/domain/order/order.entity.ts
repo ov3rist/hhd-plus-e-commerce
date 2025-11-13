@@ -62,30 +62,30 @@ export class Order {
    * 주문 생성 (정적 팩토리 메서드)
    * BR-005: 재고 선점은 최대 10분간 유지되며, 이후 자동 해제된다
    */
-  static create(
-    id: number,
-    userId: number,
-    totalAmount: number,
-    discountAmount: number = 0,
-    couponId: number | null = null,
-  ): Order {
-    const now = new Date();
-    const expiredAt = new Date(now.getTime() + 10 * 60 * 1000); // 10분 후
+  // static create(
+  //   id: number,
+  //   userId: number,
+  //   totalAmount: number,
+  //   discountAmount: number = 0,
+  //   couponId: number | null = null,
+  // ): Order {
+  //   const now = new Date();
+  //   const expiredAt = new Date(now.getTime() + 10 * 60 * 1000); // 10분 후
 
-    return new Order(
-      id,
-      userId,
-      couponId,
-      totalAmount,
-      discountAmount,
-      totalAmount - discountAmount,
-      OrderStatus.PENDING,
-      now,
-      null,
-      expiredAt,
-      now,
-    );
-  }
+  //   return new Order(
+  //     id,
+  //     userId,
+  //     couponId,
+  //     totalAmount,
+  //     discountAmount,
+  //     totalAmount - discountAmount,
+  //     OrderStatus.PENDING,
+  //     now,
+  //     null,
+  //     expiredAt,
+  //     now,
+  //   );
+  // }
 
   /**
    * 쿠폰과 함께 주문 생성 (정적 팩토리 메서드)

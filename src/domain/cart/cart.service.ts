@@ -39,8 +39,7 @@ export class CartDomainService {
       existingItem.updateQuantity(existingItem.quantity + quantity);
       await this.cartRepository.update(existingItem); // save
     } else {
-      const newCartItem = CartItem.create(userId, productOptionId, quantity);
-      await this.cartRepository.create(newCartItem); // save
+      await this.cartRepository.create(userId, productOptionId, quantity); // save
     }
   }
 

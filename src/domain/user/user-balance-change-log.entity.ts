@@ -38,31 +38,31 @@ export class UserBalanceChangeLog {
   /**
    * 로그 생성 팩토리 메서드
    */
-  static create(
-    userId: number,
-    amount: number,
-    beforeAmount: number,
-    afterAmount: number,
-    code: BalanceChangeCode,
-    note: string | null = null,
-    refId: number | null = null,
-  ): UserBalanceChangeLog {
-    if (afterAmount !== beforeAmount + amount) {
-      throw new ValidationException('잔액 변경 계산이 일치하지 않습니다');
-    }
+  // static create(
+  //   userId: number,
+  //   amount: number,
+  //   beforeAmount: number,
+  //   afterAmount: number,
+  //   code: BalanceChangeCode,
+  //   note: string | null = null,
+  //   refId: number | null = null,
+  // ): UserBalanceChangeLog {
+  //   if (afterAmount !== beforeAmount + amount) {
+  //     throw new ValidationException('잔액 변경 계산이 일치하지 않습니다');
+  //   }
 
-    return new UserBalanceChangeLog(
-      0, // id는 DB에서 생성
-      userId,
-      amount,
-      beforeAmount,
-      afterAmount,
-      code,
-      note,
-      refId,
-      new Date(),
-    );
-  }
+  //   return new UserBalanceChangeLog(
+  //     0, // id는 DB에서 생성
+  //     userId,
+  //     amount,
+  //     beforeAmount,
+  //     afterAmount,
+  //     code,
+  //     note,
+  //     refId,
+  //     new Date(),
+  //   );
+  // }
 }
 
 /**

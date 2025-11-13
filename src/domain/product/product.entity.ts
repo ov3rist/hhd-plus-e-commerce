@@ -49,4 +49,24 @@ export class Product {
     this.isAvailable = true;
     this.updatedAt = new Date();
   }
+
+  // static create(
+  //   name: string,
+  //   description: string,
+  //   price: number,
+  //   category: string,
+  //   isAvailable: boolean,
+  // ): Product {
+  //   const now = new Date();
+  //   return new Product(
+  //     0,
+  //     name,
+  //     description,
+  //     price,
+  //     category,
+  //     isAvailable,
+  //     now,
+  //     now,
+  //   );
+  // }
 }

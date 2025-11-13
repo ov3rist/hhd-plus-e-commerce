@@ -38,17 +38,17 @@ export class CartItem {
     }
   }
 
-  /**
-   * 생성
-   */
-  static create(
-    userId: number,
-    productOptionId: number,
-    quantity: number,
-  ): CartItem {
-    const now = new Date();
-    return new CartItem(0, userId, productOptionId, quantity, now, now);
-  }
+  // /**
+  //  * 생성
+  //  */
+  // static create(
+  //   userId: number,
+  //   productOptionId: number,
+  //   quantity: number,
+  // ): CartItem {
+  //   const now = new Date();
+  //   return new CartItem(0, userId, productOptionId, quantity, now, now);
+  // }
 
   /**
    * 수량 변경

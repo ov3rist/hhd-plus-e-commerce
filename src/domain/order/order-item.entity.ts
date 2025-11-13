@@ -56,29 +56,29 @@ export class OrderItem {
     }
   }
 
-  /**
-   * OrderItem 생성 (정적 팩토리 메서드)
-   * 주문 당시의 가격을 스냅샷으로 저장
-   */
-  static create(
-    id: number,
-    orderId: number,
-    productOptionId: number,
-    productName: string,
-    price: number,
-    quantity: number,
-  ): OrderItem {
-    const subtotal = price * quantity;
+  // /**
+  //  * OrderItem 생성 (정적 팩토리 메서드)
+  //  * 주문 당시의 가격을 스냅샷으로 저장
+  //  */
+  // static create(
+  //   id: number,
+  //   orderId: number,
+  //   productOptionId: number,
+  //   productName: string,
+  //   price: number,
+  //   quantity: number,
+  // ): OrderItem {
+  //   const subtotal = price * quantity;
 
-    return new OrderItem(
-      id,
-      orderId,
-      productOptionId,
-      productName,
-      price,
-      quantity,
-      subtotal,
-      new Date(),
-    );
-  }
+  //   return new OrderItem(
+  //     id,
+  //     orderId,
+  //     productOptionId,
+  //     productName,
+  //     price,
+  //     quantity,
+  //     subtotal,
+  //     new Date(),
+  //   );
+  // }
 }
