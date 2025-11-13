@@ -191,6 +191,25 @@ export class ProductPopularitySnapshotRepository
   }
 
   // ANCHOR productPopularitySnapshot.findTop5
+  /**
+   * TODO: [성능 개선 필요] 비효율적인 ORDER BY 및 WHERE 절
+   * 원인:
+   * 1. 첫 번째 쿼리에서 created_at DESC 정렬로 최신 스냅샷 시간 조회
+   * 2. 두 번째 쿼리에서 해당 시간의 데이터를 rank ASC로 정렬 조회
+   * 3. WHERE created_at = ? 조건과 ORDER BY rank를 함께 사용하지만 복합 인덱스 부재
+   *
+   * 개선 방안:
+   * 1. 복합 인덱스 추가: (created_at DESC, rank ASC)
+   *    CREATE INDEX idx_snapshot_created_rank ON product_popularity_snapshot(created_at DESC, rank ASC);
+   * 2. 또는 단일 쿼리로 최적화:
+   *    SELECT * FROM (
+   *      SELECT *, ROW_NUMBER() OVER (PARTITION BY created_at ORDER BY rank ASC) as rn
+   *      FROM product_popularity_snapshot
+   *      WHERE created_at = (SELECT MAX(created_at) FROM product_popularity_snapshot)
+   *    ) WHERE rn <= count;
+   *
+   * 예상 효과: 인덱스 스캔으로 O(log n) 시간 복잡도 개선
+   */
   async findTop(count: number): Promise<ProductPopularitySnapshot[]> {
     // 가장 최신 스냅샷의 생성 시간 찾기
     const latestSnapshot =

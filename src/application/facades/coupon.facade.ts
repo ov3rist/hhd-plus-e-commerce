@@ -21,6 +21,18 @@ export class CouponFacade {
 
   /**
    * ANCHOR 장바구니-상품옵션 조회 뷰 반환
+   *
+   * TODO: [성능 개선 필요] N+1 쿼리 문제
+   * 원인: 각 사용자 쿠폰마다 개별적으로 쿠폰 정보를 조회
+   * - userCoupons.length만큼 couponService.getCoupon() 호출
+   *
+   * 개선 방안:
+   * 1. Repository에 IN 절을 사용한 일괄 조회 메서드 추가
+   *    - findManyByIds(ids: number[]): Promise<Coupon[]>
+   * 2. 또는 JOIN을 활용한 단일 쿼리로 최적화
+   *    - user_coupons LEFT JOIN coupons
+   *
+   * 예상 효과: O(n) 쿼리 → O(1) 쿼리로 개선
    */
   async getUserCoupons(userId: number): Promise<UserCouponView[]> {
     // 사용자 쿠폰 조회

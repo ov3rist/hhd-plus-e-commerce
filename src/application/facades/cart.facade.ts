@@ -24,6 +24,20 @@ export class CartFacade {
 
   /**
    * ANCHOR 장바구니-상품옵션 조회 뷰 반환
+   *
+   * TODO: [성능 개선 필요] N+1 쿼리 문제
+   * 원인: 각 장바구니 아이템마다 개별적으로 상품옵션과 상품을 조회
+   * - cartItems.length만큼 productService.getProductOption() 호출
+   * - productIds.length만큼 productService.getProduct() 호출
+   *
+   * 개선 방안:
+   * 1. Repository에 IN 절을 사용한 일괄 조회 메서드 추가
+   *    - findManyByIds(ids: number[]): Promise<ProductOption[]>
+   *    - findProductsByIds(ids: number[]): Promise<Product[]>
+   * 2. 또는 JOIN을 활용한 단일 쿼리로 최적화
+   *    - cart_items LEFT JOIN product_options LEFT JOIN products
+   *
+   * 예상 효과: O(n) 쿼리 → O(1) 쿼리로 개선
    */
   async getCartView(userId: number): Promise<CartItemView[]> {
     // 카트 조회
