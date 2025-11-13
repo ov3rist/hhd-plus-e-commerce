@@ -1,7 +1,7 @@
 import { UserDomainService } from '@domain/user';
 import { Injectable } from '@nestjs/common';
 
-export interface UserViewDto {
+export interface UserBalanceView {
   userId: number;
   balance: number;
 }
@@ -13,7 +13,10 @@ export class UserFacade {
   /**
    * ANCHOR user.chargeBalance
    */
-  async chargeBalance(userId: number, amount: number): Promise<UserViewDto> {
+  async chargeBalance(
+    userId: number,
+    amount: number,
+  ): Promise<UserBalanceView> {
     const user = await this.userService.getUser(userId);
     user.charge(amount);
 

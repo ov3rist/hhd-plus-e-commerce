@@ -1,2 +1,2 @@
 export * from './cart-item.entity';
-export * from './cart.service';
+export { CartDomainService } from './cart.service';

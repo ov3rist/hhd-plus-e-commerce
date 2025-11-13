@@ -4,7 +4,7 @@ import { CartDomainService, CartItem } from '@domain/cart';
 import { Product, ProductDomainService, ProductOption } from '@domain/product';
 import { Injectable } from '@nestjs/common';
 
-export interface CartViewDto {
+export interface CartItemView {
   cartItemId: number;
   productId: number;
   productName: string;
@@ -25,7 +25,7 @@ export class CartFacade {
   /**
    * ANCHOR 장바구니-상품옵션 조회 뷰 반환
    */
-  async getCartView(userId: number): Promise<CartViewDto[]> {
+  async getCartView(userId: number): Promise<CartItemView[]> {
     // 카트 조회
     const cartItems = await this.cartService.getCart(userId);
 

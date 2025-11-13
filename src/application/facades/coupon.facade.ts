@@ -4,7 +4,7 @@ import { Coupon, CouponDomainService, UserCoupon } from '@domain/coupon';
 import { Product, ProductDomainService, ProductOption } from '@domain/product';
 import { Injectable } from '@nestjs/common';
 
-export interface CouponViewDto {
+export interface UserCouponView {
   userCouponId: number;
   couponName: string;
   discountRate: number;
@@ -18,7 +18,7 @@ export class CouponFacade {
   /**
    * ANCHOR 장바구니-상품옵션 조회 뷰 반환
    */
-  async getUserCoupons(userId: number): Promise<CouponViewDto[]> {
+  async getUserCoupons(userId: number): Promise<UserCouponView[]> {
     // 사용자 쿠폰 조회
     const userCoupons = await this.couponService.getUserCoupons(userId);
     const couponIds = userCoupons.map((uc) => uc.couponId);
@@ -43,7 +43,7 @@ export class CouponFacade {
    * @param userId
    * @param coupon
    */
-  async issueCoupon(userId: number, couponId: number): Promise<CouponViewDto> {
+  async issueCoupon(userId: number, couponId: number): Promise<UserCouponView> {
     const coupon = await this.couponService.getCoupon(couponId);
     const issuedCoupon = await this.couponService.issueCouponToUser(
       userId,

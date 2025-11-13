@@ -91,5 +91,6 @@ export class GetOrdersResponseDto {
  * 주문 상세 조회 응답 DTO
  */
 export class GetOrderDetailResponseDto {
+  @ApiProperty({ description: '주문 상세 정보', type: OrderDetailDto })
   orderDetail: OrderDetailDto;
 }
