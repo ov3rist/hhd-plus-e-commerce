@@ -10,7 +10,7 @@ import { ErrorCode } from '@domain/common/constants/error-code';
 
 /**
  * CartDomainService
- * 장바구니 관련 핵심 비즈니스 로직을 담당한다.
+ * 장바구니 관련 영속성 계층과 상호작용하며 핵심 비즈니스 로직을 담당한다.
  */
 @Injectable()
 export class CartDomainService {

@@ -16,6 +16,18 @@ export const ErrorCode = {
     code: 'P004',
     message: '상품 옵션을 찾을 수 없음',
   },
+  PRODUCT_UNAVAILABLE: {
+    code: 'P005',
+    message: '현재 판매중이 아닙니다.',
+  },
+  INVALID_PRICE: {
+    code: 'P006',
+    message: '잘못된 가격',
+  },
+  INVALID_ARGUMENT: {
+    code: 'P007',
+    message: '잘못된 인자 전달',
+  },
 
   // Order
   INVALID_QUANTITY: {

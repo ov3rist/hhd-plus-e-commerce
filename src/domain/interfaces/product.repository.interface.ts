@@ -8,11 +8,9 @@ import { ProductPopularitySnapshot } from '@domain/product/product-popularity-sn
  */
 export abstract class IProductRepository {
   abstract findById(id: number): Promise<Product | null>;
-  abstract findAll(): Promise<Product[]>;
-  abstract findByIds(ids: number[]): Promise<Product[]>;
-  abstract save(product: Product): Promise<Product>;
-  abstract findTopProducts(): Promise<ProductPopularitySnapshot[]>;
-  abstract saveSnapshot(snapshot: ProductPopularitySnapshot): Promise<void>;
+  abstract findAll(): Promise<Product[]>; // TODO 페이징, 필터
+  abstract create(product: Product): Promise<Product>;
+  abstract update(product: Product): Promise<Product>;
 }
 
 /**
@@ -21,7 +19,14 @@ export abstract class IProductRepository {
  */
 export abstract class IProductOptionRepository {
   abstract findById(id: number): Promise<ProductOption | null>;
-  abstract findByProductId(productId: number): Promise<ProductOption[]>;
-  abstract findByIds(ids: number[]): Promise<ProductOption[]>;
-  abstract save(productOption: ProductOption): Promise<ProductOption>;
+  abstract findManyByProductId(productId: number): Promise<ProductOption[]>;
+  abstract create(productOption: ProductOption): Promise<ProductOption>;
+  abstract update(productOption: ProductOption): Promise<ProductOption>;
+}
+
+export abstract class IProductPopularitySnapshotRepository {
+  abstract findTop(count: number): Promise<ProductPopularitySnapshot[]>;
+  abstract create(
+    snapshot: ProductPopularitySnapshot,
+  ): Promise<ProductPopularitySnapshot>;
 }

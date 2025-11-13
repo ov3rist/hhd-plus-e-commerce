@@ -68,7 +68,8 @@ export class CartController {
   async getCart(
     @Param('userId', ParseIntPipe) userId: number,
   ): Promise<GetCartResponseDto> {
-    return this.cartFacade.getCartView(userId);
+    const items = await this.cartFacade.getCartView(userId);
+    return { items };
   }
 
   /**

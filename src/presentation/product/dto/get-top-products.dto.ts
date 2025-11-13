@@ -21,9 +21,6 @@ export class TopProductDto {
 
   @ApiProperty({ description: '판매 수량' })
   salesCount: number;
-
-  @ApiProperty({ description: '마지막 판매 시각' })
-  lastSoldAt: Date;
 }
 
 /**
@@ -35,7 +32,4 @@ export class GetTopProductsResponseDto {
     type: [TopProductDto],
   })
   products: TopProductDto[];
-
-  @ApiProperty({ description: '조회 시각' })
-  createdAt: Date;
 }

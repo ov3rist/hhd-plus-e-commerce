@@ -1,57 +1,103 @@
 import { Injectable } from '@nestjs/common';
 import {
   IProductOptionRepository,
+  IProductPopularitySnapshotRepository,
   IProductRepository,
 } from '@domain/interfaces';
 import { Product } from './product.entity';
 import { ProductOption } from './product-option.entity';
 import { ProductPopularitySnapshot } from './product-popularity-snapshot.entity';
-import { DomainException } from '@domain/common/exceptions';
+import { ValidationException } from '@domain/common/exceptions';
 import { ErrorCode } from '@domain/common/constants/error-code';
-
-export interface ProductDetailSnapshot {
-  product: Product;
-  options: ProductOption[];
-}
 
 /**
  * ProductDomainService
- * 상품 조회 도메인 규칙 담당.
+ * 상품 관련 영속성 계층과 상호작용하며 핵심 비즈니스 로직을 담당한다.
  */
 @Injectable()
 export class ProductDomainService {
   constructor(
     private readonly productRepository: IProductRepository,
     private readonly productOptionRepository: IProductOptionRepository,
+    private readonly productPopularitySnapshotRepository: IProductPopularitySnapshotRepository,
   ) {}
 
   /**
-   * 판매 가능 상품 목록 조회
+   * ANCHOR 판매 가능 상품 목록 조회
    */
-  async fetchAvailableProducts(): Promise<Product[]> {
+  async getProductsOnSale(): Promise<Product[]> {
     const products = await this.productRepository.findAll();
     return products.filter((product) => product.isAvailable);
   }
 
   /**
-   * 상품 상세 및 옵션 조회
+   * ANCHOR 상품 단건 조회
    */
-  async fetchProductDetail(productId: number): Promise<ProductDetailSnapshot> {
+  async getProduct(productId: number): Promise<Product> {
     const product = await this.productRepository.findById(productId);
     if (!product) {
-      throw new DomainException(ErrorCode.PRODUCT_NOT_FOUND);
+      throw new ValidationException(ErrorCode.PRODUCT_NOT_FOUND);
     }
-
-    const options =
-      await this.productOptionRepository.findByProductId(productId);
-
-    return { product, options };
+    return product;
   }
 
   /**
-   * 인기 상품 스냅샷 조회
+   * ANCHOR 상품 상세 및 옵션 조회 (재고 포함)
    */
-  async fetchTopProducts(): Promise<ProductPopularitySnapshot[]> {
-    return this.productRepository.findTopProducts();
+  async getProductOptions(productId: number): Promise<ProductOption[]> {
+    const options =
+      await this.productOptionRepository.findManyByProductId(productId);
+
+    return options;
+  }
+
+  /**
+   * ANCHOR 상품 옵션 단건 조회
+   */
+  async getProductOption(productOptionId: number): Promise<ProductOption> {
+    const option = await this.productOptionRepository.findById(productOptionId);
+    if (!option) {
+      throw new ValidationException(ErrorCode.PRODUCT_OPTION_NOT_FOUND);
+    }
+    return option;
+  }
+
+  /**
+   * ANCHOR 인기 상품 스냅샷 조회
+   */
+  async getTopProducts(count: number): Promise<ProductPopularitySnapshot[]> {
+    if (count <= 0) {
+      throw new ValidationException(ErrorCode.INVALID_ARGUMENT);
+    }
+
+    return this.productPopularitySnapshotRepository.findTop(count);
+  }
+
+  /**
+   * ANCHOR 상품 재고 관리자 업데이트
+   * 상품 재고 수량을 증가시키거나 선점중인 재고수량 까지 차감시킬 수 있다.
+   */
+  async updateProductOptionStock(
+    productOptionId: number,
+    operation: 'increase' | 'decrease',
+    quantity: number,
+  ): Promise<void> {
+    const option = await this.productOptionRepository.findById(productOptionId);
+    if (!option) {
+      throw new ValidationException(ErrorCode.PRODUCT_OPTION_NOT_FOUND);
+    }
+
+    if (operation === 'decrease') {
+      if (option.stock < quantity) {
+        throw new ValidationException(ErrorCode.INSUFFICIENT_STOCK);
+      }
+      option.adjustStock(option.stock - quantity);
+    } else if (operation === 'increase') {
+      option.adjustStock(option.stock + quantity);
+    } else {
+      throw new ValidationException(ErrorCode.INVALID_ARGUMENT);
+    }
+
+    await this.productOptionRepository.update(option); // save
   }
 }

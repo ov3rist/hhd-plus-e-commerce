@@ -1,3 +1,4 @@
+import { ErrorCode } from '@domain/common/constants/error-code';
 import { ValidationException } from '@domain/common/exceptions';
 
 /**
@@ -18,24 +19,26 @@ export class Product {
   }
 
   /**
-   * 가격 검증
+   * ANCHOR 가격 검증
    */
   private validatePrice(): void {
     if (this.price < 0) {
-      throw new ValidationException('가격은 0 이상이어야 합니다');
+      throw new ValidationException(ErrorCode.INVALID_PRICE);
     }
   }
 
   /**
-   * 판매 가능 여부 확인
-   * 상품이 판매 가능 상태인지 확인 (재고와 별개)
+   * ANCHOR 판매 가능 여부 확인
+   * 상품이 판매 가능 상태인지 확인 (옵션 재고와 별개)
    */
-  canBeSold(): boolean {
-    return this.isAvailable;
+  validateAvailability(): void {
+    if (!this.isAvailable) {
+      throw new ValidationException(ErrorCode.PRODUCT_UNAVAILABLE);
+    }
   }
 
   /**
-   * 상품 판매 중지
+   * ANCHOR 상품 판매 중지
    */
   markAsUnavailable(): void {
     this.isAvailable = false;
@@ -43,7 +46,7 @@ export class Product {
   }
 
   /**
-   * 상품 판매 재개
+   * ANCHOR 상품 판매 재개
    */
   markAsAvailable(): void {
     this.isAvailable = true;

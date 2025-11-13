@@ -32,7 +32,7 @@ export class ProductOption {
   // }
 
   /**
-   * 재고 검증
+   * ANCHOR 재고 유효성
    */
   private validateStock(): void {
     if (this.stock < 0 || this.reservedStock < 0) {
@@ -44,7 +44,7 @@ export class ProductOption {
   }
 
   /**
-   * 사용 가능한 재고 조회
+   * ANCHOR 사용 가능한 재고 조회
    * BR-001: 재고가 0 이하인 상품은 주문할 수 없다
    */
   get availableStock(): number {
@@ -52,30 +52,38 @@ export class ProductOption {
   }
 
   /**
-   * 재고 선점 (주문서 생성 시)
+   * ANCHOR 재고 선점 (주문서 생성 시)
    * BR-002: 주문 가능 수량은 (현재 재고 - 선점된 재고) 기준
    */
   reserveStock(quantity: number): void {
-    this.validateStock();
     this.reservedStock += quantity;
+    this.validateStock();
   }
 
   /**
-   * 재고 확정 차감 (결제 완료 시)
+   * ANCHOR 재고 확정 차감 (결제 완료 시)
    * BR-003: 결제 완료 시점에 재고가 확정 차감
    */
   decreaseStock(quantity: number): void {
-    this.validateStock();
     this.stock -= quantity;
     this.reservedStock -= quantity;
+    this.validateStock();
   }
 
   /**
-   * 선점 재고 해제 (결제 실패/만료 시)
+   * ANCHOR 선점 재고 해제 (결제 실패/만료 시)
    * BR-004: 결제 실패 또는 주문 취소 시 선점된 재고는 즉시 해제
    */
   releaseReservedStock(quantity: number): void {
-    this.validateStock();
     this.reservedStock -= quantity;
+    this.validateStock();
+  }
+
+  /**
+   * ANCHOR 재고 관리자용 재고 조정
+   */
+  adjustStock(newStock: number): void {
+    this.stock = newStock;
+    this.validateStock();
   }
 }
