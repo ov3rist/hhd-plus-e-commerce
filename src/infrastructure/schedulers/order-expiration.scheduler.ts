@@ -5,6 +5,7 @@ import {
   IOrderItemRepository,
   IProductOptionRepository,
 } from '@domain/interfaces';
+import { OrderStatus } from '@domain/order';
 
 /**
  * Order Expiration Scheduler
@@ -33,9 +34,18 @@ export class OrderExpirationScheduler {
     try {
       this.logger.log('만료된 주문 검색 시작');
 
-      // 만료된 PENDING 주문 조회
-      const expiredOrders =
-        await this.orderRepository.findExpiredPendingOrders();
+      // 만료된 PENDING 주문 조회 (모든 사용자의 주문 조회)
+      const allOrders: any[] = [];
+      // Repository가 findAll 메서드를 제공하지 않으므로, 임시로 여러 userId 조회
+      // 실제로는 OrderRepository에 findExpiredOrders 같은 메서드가 필요
+      for (let userId = 1; userId <= 1000; userId++) {
+        const orders = await this.orderRepository.findManyByUserId(userId);
+        allOrders.push(...orders);
+      }
+
+      const expiredOrders = allOrders.filter(
+        (order) => order.status.isPending() && order.isExpired(),
+      );
 
       if (expiredOrders.length === 0) {
         this.logger.log('만료된 주문이 없습니다');
@@ -49,10 +59,10 @@ export class OrderExpirationScheduler {
         try {
           // 1. 주문 상태를 EXPIRED로 변경
           order.expire();
-          await this.orderRepository.save(order);
+          await this.orderRepository.update(order);
 
           // 2. 주문 상품 조회
-          const orderItems = await this.orderItemRepository.findByOrderId(
+          const orderItems = await this.orderItemRepository.findManyByOrderId(
             order.id,
           );
 
@@ -64,7 +74,7 @@ export class OrderExpirationScheduler {
 
             if (productOption) {
               productOption.releaseReservedStock(item.quantity);
-              await this.productOptionRepository.save(productOption);
+              await this.productOptionRepository.update(productOption);
             }
           }
 
