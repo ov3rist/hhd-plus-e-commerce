@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { IOrderRepository, IOrderItemRepository } from '@domain/interfaces';
 import { Order } from '@domain/order/order.entity';
 import { OrderItem } from '@domain/order/order-item.entity';
+import { OrderStatus } from '@domain/order/order-status.vo';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '@infrastructure/prisma/prisma.service';
 
@@ -42,7 +43,7 @@ export class OrderRepository implements IOrderRepository {
         total_amount: order.totalAmount,
         discount_amount: order.discountAmount,
         final_amount: order.finalAmount,
-        status: String(order.status),
+        status: order.status.value, // OrderStatus VO에서 문자열 추출
         created_at: order.createdAt,
         paid_at: order.paidAt,
         expired_at: order.expiredAt,
@@ -57,7 +58,7 @@ export class OrderRepository implements IOrderRepository {
     const updated = await this.prismaClient.orders.update({
       where: { id: BigInt(order.id) },
       data: {
-        status: String(order.status),
+        status: order.status.value, // OrderStatus VO에서 문자열 추출
         paid_at: order.paidAt,
         updated_at: order.updatedAt,
       },
@@ -83,7 +84,7 @@ export class OrderRepository implements IOrderRepository {
       toNumber(record.total_amount),
       toNumber(record.discount_amount),
       toNumber(record.final_amount),
-      record.status,
+      OrderStatus.from(record.status), // OrderStatus VO로 변환
       record.created_at,
       record.paid_at,
       record.expired_at,
