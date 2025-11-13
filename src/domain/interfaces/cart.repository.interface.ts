@@ -6,11 +6,11 @@ import { CartItem } from '@domain/cart/cart-item.entity';
  */
 export abstract class ICartRepository {
   abstract findById(id: number): Promise<CartItem | null>;
-  abstract findByUserId(userId: number): Promise<CartItem[]>;
-  abstract findByUserIdAndProductOptionId(
+  abstract findManyByUserId(userId: number): Promise<CartItem[]>;
+  abstract create(cartItem: CartItem): Promise<CartItem>;
+  abstract update(cartItem: CartItem): Promise<CartItem>;
+  abstract deleteByUserCart(
     userId: number,
     productOptionId: number,
-  ): Promise<CartItem | null>;
-  abstract save(cartItem: CartItem): Promise<CartItem>;
-  abstract deleteById(id: number): Promise<void>;
+  ): Promise<void>;
 }

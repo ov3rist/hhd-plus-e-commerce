@@ -3,7 +3,7 @@ import { ApiProperty } from '@nestjs/swagger';
 /**
  * 장바구니 항목 DTO
  */
-export class CartItemDto {
+export class CartViewDto {
   @ApiProperty({ description: '장바구니 항목 ID' })
   cartItemId: number;
 
@@ -17,19 +17,16 @@ export class CartItemDto {
   productOptionId: number;
 
   @ApiProperty({ description: '옵션 색상', nullable: true })
-  optionColor: string | null;
+  productOptionColor: string | null;
 
   @ApiProperty({ description: '옵션 사이즈', nullable: true })
-  optionSize: string | null;
+  productOptionSize: string | null;
 
   @ApiProperty({ description: '가격' })
   price: number;
 
   @ApiProperty({ description: '수량' })
   quantity: number;
-
-  @ApiProperty({ description: '소계' })
-  subtotal: number;
 }
 
 /**
@@ -38,10 +35,7 @@ export class CartItemDto {
 export class GetCartResponseDto {
   @ApiProperty({
     description: '장바구니 항목 목록',
-    type: [CartItemDto],
+    type: [CartViewDto],
   })
-  items: CartItemDto[];
-
-  @ApiProperty({ description: '총 금액' })
-  totalAmount: number;
+  items: CartViewDto[];
 }

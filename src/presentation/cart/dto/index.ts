@@ -1,2 +1,2 @@
-export * from './add-to-cart.dto';
+export * from './add-cart.dto';
 export * from './get-cart.dto';

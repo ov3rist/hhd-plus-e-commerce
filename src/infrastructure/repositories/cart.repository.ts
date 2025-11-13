@@ -14,43 +14,38 @@ export class CartRepository implements ICartRepository {
     return this.cartItems.get(id) || null;
   }
 
-  async findByUserId(userId: number): Promise<CartItem[]> {
+  async findManyByUserId(userId: number): Promise<CartItem[]> {
     return Array.from(this.cartItems.values()).filter(
       (item) => item.userId === userId,
     );
   }
 
-  async findByUserIdAndProductOptionId(
-    userId: number,
-    productOptionId: number,
-  ): Promise<CartItem | null> {
-    return (
-      Array.from(this.cartItems.values()).find(
-        (item) =>
-          item.userId === userId && item.productOptionId === productOptionId,
-      ) || null
+  async create(cartItem: CartItem): Promise<CartItem> {
+    const newCartItem = new CartItem(
+      this.currentId++,
+      cartItem.userId,
+      cartItem.productOptionId,
+      cartItem.quantity,
+      new Date(),
+      new Date(),
     );
+    this.cartItems.set(newCartItem.id, newCartItem);
+    return newCartItem;
   }
 
-  async save(cartItem: CartItem): Promise<CartItem> {
-    if (cartItem.id === 0) {
-      const newItem = new CartItem(
-        this.currentId++,
-        cartItem.userId,
-        cartItem.productOptionId,
-        cartItem.quantity,
-        cartItem.createdAt,
-        cartItem.updatedAt,
-      );
-      this.cartItems.set(newItem.id, newItem);
-      return newItem;
-    }
-
+  async update(cartItem: CartItem): Promise<CartItem> {
     this.cartItems.set(cartItem.id, cartItem);
     return cartItem;
   }
 
-  async deleteById(id: number): Promise<void> {
-    this.cartItems.delete(id);
+  async deleteByUserCart(
+    userId: number,
+    productOptionId: number,
+  ): Promise<void> {
+    for (const [id, item] of this.cartItems) {
+      if (item.userId === userId && item.productOptionId === productOptionId) {
+        this.cartItems.delete(id);
+      }
+    }
   }
 }
