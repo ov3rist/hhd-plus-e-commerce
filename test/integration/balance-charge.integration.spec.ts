@@ -3,7 +3,7 @@ import { UserDomainService } from '@domain/user/user.service';
 import {
   UserRepository,
   UserBalanceChangeLogRepository,
-} from '@infrastructure/repositories';
+} from '@infrastructure/repositories/prisma';
 import { User } from '@domain/user/user.entity';
 
 describe('잔액 충전 통합 테스트 (관리자 기능)', () => {

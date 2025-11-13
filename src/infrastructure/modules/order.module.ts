@@ -11,7 +11,7 @@ import { IOrderRepository, IOrderItemRepository } from '@domain/interfaces';
 import {
   OrderRepository,
   OrderItemRepository,
-} from '@infrastructure/repositories';
+} from '@infrastructure/repositories/prisma';
 import { OrderController } from '@presentation/order';
 
 /**

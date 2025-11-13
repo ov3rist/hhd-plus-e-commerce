@@ -4,7 +4,7 @@ import { CartDomainService } from '@domain/cart';
 import { ProductDomainService } from '@domain/product';
 import { ProductModule } from './product.module';
 import { ICartRepository } from '@domain/interfaces';
-import { CartRepository } from '@infrastructure/repositories';
+import { CartRepository } from '@infrastructure/repositories/prisma';
 import { CartController } from '@presentation/cart';
 
 /**

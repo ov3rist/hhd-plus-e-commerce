@@ -10,7 +10,7 @@ import {
   ProductRepository,
   ProductOptionRepository,
   ProductPopularitySnapshotRepository,
-} from '@infrastructure/repositories';
+} from '@infrastructure/repositories/prisma';
 import { ProductController } from '@presentation/product';
 
 /**

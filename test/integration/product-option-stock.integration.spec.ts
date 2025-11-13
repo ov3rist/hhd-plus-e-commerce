@@ -13,7 +13,7 @@ import {
   UserBalanceChangeLogRepository,
   CouponRepository,
   UserCouponRepository,
-} from '@infrastructure/repositories';
+} from '@infrastructure/repositories/prisma';
 import { Product } from '@domain/product/product.entity';
 import { ProductOption } from '@domain/product/product-option.entity';
 import { User } from '@domain/user/user.entity';
