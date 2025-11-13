@@ -8,7 +8,7 @@ import {
 import {
   UserRepository,
   UserBalanceChangeLogRepository,
-} from '@infrastructure/repositories';
+} from '@infrastructure/repositories/prisma';
 import { UserController } from '@presentation/user';
 
 /**

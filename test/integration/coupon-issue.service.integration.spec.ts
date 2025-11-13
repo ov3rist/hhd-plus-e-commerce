@@ -1,7 +1,7 @@
 import {
   CouponRepository,
   UserCouponRepository,
-} from '@infrastructure/repositories';
+} from '@infrastructure/repositories/prisma';
 import { Coupon } from '@domain/coupon/coupon.entity';
 
 describe('CouponService Integration Tests', () => {

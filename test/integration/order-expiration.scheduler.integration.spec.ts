@@ -5,7 +5,7 @@ import {
   ProductRepository,
   ProductOptionRepository,
   UserRepository,
-} from '@infrastructure/repositories';
+} from '@infrastructure/repositories/prisma';
 import { Order } from '@domain/order/order.entity';
 import { OrderItem } from '@domain/order/order-item.entity';
 import { Product } from '@domain/product/product.entity';

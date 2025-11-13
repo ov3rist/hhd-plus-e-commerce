@@ -3,6 +3,7 @@
 import { Coupon, CouponDomainService, UserCoupon } from '@domain/coupon';
 import { Product, ProductDomainService, ProductOption } from '@domain/product';
 import { Injectable } from '@nestjs/common';
+import { PrismaService } from '@infrastructure/prisma/prisma.service';
 
 export interface UserCouponView {
   userCouponId: number;
@@ -13,7 +14,10 @@ export interface UserCouponView {
 
 @Injectable()
 export class CouponFacade {
-  constructor(private readonly couponService: CouponDomainService) {}
+  constructor(
+    private readonly couponService: CouponDomainService,
+    private readonly prisma: PrismaService,
+  ) {}
 
   /**
    * ANCHOR 장바구니-상품옵션 조회 뷰 반환
@@ -44,17 +48,19 @@ export class CouponFacade {
    * @param coupon
    */
   async issueCoupon(userId: number, couponId: number): Promise<UserCouponView> {
-    const coupon = await this.couponService.getCoupon(couponId);
-    const issuedCoupon = await this.couponService.issueCouponToUser(
-      userId,
-      coupon,
-    );
+    return await this.prisma.runInTransaction(async () => {
+      const coupon = await this.couponService.getCoupon(couponId);
+      const issuedCoupon = await this.couponService.issueCouponToUser(
+        userId,
+        coupon,
+      );
 
-    return {
-      userCouponId: issuedCoupon.id,
-      couponName: coupon.name,
-      discountRate: coupon.discountRate,
-      expiredAt: coupon.expiredAt,
-    };
+      return {
+        userCouponId: issuedCoupon.id,
+        couponName: coupon.name,
+        discountRate: coupon.discountRate,
+        expiredAt: coupon.expiredAt,
+      };
+    });
   }
 }
