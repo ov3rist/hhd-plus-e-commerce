@@ -23,7 +23,7 @@ describe('OrderExpirationScheduler Integration Tests', () => {
 
   beforeEach(() => {
     orderRepository = new OrderRepository();
-    orderItemRepository = new OrderItemRepository(orderRepository);
+    orderItemRepository = new OrderItemRepository();
     productRepository = new ProductRepository();
     productOptionRepository = new ProductOptionRepository();
     userRepository = new UserRepository();

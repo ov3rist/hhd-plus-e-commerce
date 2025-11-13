@@ -1,8 +1,8 @@
-import { UserService } from '@application/user.service';
+import { UserDomainService } from '@domain/user/user.service';
 import {
   IUserRepository,
   IUserBalanceChangeLogRepository,
-} from '@application/interfaces';
+} from '@domain/interfaces';
 import { User } from '@domain/user';
 import {
   UserBalanceChangeLog,
@@ -11,8 +11,8 @@ import {
 import { ErrorCode } from '@domain/common/constants/error-code';
 import { DomainException } from '@domain/common/exceptions';
 
-describe('UserService', () => {
-  let userService: UserService;
+describe('UserDomainService', () => {
+  let userService: UserDomainService;
   let mockUserRepository: jest.Mocked<IUserRepository>;
   let mockBalanceLogRepository: jest.Mocked<IUserBalanceChangeLogRepository>;
 
@@ -20,16 +20,19 @@ describe('UserService', () => {
     // Mock Repositories
     mockUserRepository = {
       findById: jest.fn(),
-      save: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
     } as any;
 
     mockBalanceLogRepository = {
-      save: jest.fn(),
+      create: jest.fn(),
       findByUserId: jest.fn(),
-      findByUserIdWithFilter: jest.fn(),
     } as any;
 
-    userService = new UserService(mockUserRepository, mockBalanceLogRepository);
+    userService = new UserDomainService(
+      mockUserRepository,
+      mockBalanceLogRepository,
+    );
   });
 
   afterEach(() => {

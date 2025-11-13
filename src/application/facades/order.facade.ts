@@ -152,17 +152,26 @@ export class OrderFacade {
       await this.couponService.updateUserCoupon(userCoupon);
     }
 
-    // 결제 처리
-    order.pay();
-    await this.orderService.updateOrder(order); // save
-
-    // 사용자 잔액 차감
+    // 사용자 잔액 차감 (먼저 실행 - 실패 시 트랜잭션 롤백)
     const user = await this.userService.deductUser(
       userId,
       order.finalAmount,
       orderId,
       `주문 ${orderId} 결제`,
-    ); // save
+    );
+
+    // 결제 처리
+    order.pay();
+    await this.orderService.updateOrder(order);
+
+    // 재고 확정 차감 (선점 → 확정)
+    const orderItems = await this.orderService.getOrderItems(orderId);
+    for (const item of orderItems) {
+      await this.productService.confirmPaymentStock(
+        item.productOptionId,
+        item.quantity,
+      );
+    }
 
     return {
       orderId: order.id,

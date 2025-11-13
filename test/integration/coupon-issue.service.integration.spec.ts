@@ -1,4 +1,3 @@
-import { CouponService } from '@application/coupon.service';
 import {
   CouponRepository,
   UserCouponRepository,
