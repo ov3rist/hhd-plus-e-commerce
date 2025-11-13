@@ -7,8 +7,7 @@ import { OrderItem } from '@domain/order/order-item.entity';
  */
 export abstract class IOrderRepository {
   abstract findById(id: number): Promise<Order | null>;
-  abstract findByUserId(userId: number): Promise<Order[]>;
-  abstract findExpiredPendingOrders(): Promise<Order[]>;
+  abstract findManyByUserId(userId: number): Promise<Order[]>;
   abstract create(order: Order): Promise<Order>;
   abstract update(order: Order): Promise<Order>;
 }
@@ -18,8 +17,7 @@ export abstract class IOrderRepository {
  * 주문 상품 데이터 접근 계약
  */
 export abstract class IOrderItemRepository {
-  abstract findByOrderId(orderId: number): Promise<OrderItem[]>;
-  abstract findRecentPaidOrderItems(days: number): Promise<OrderItem[]>;
+  abstract findManyByOrderId(orderId: number): Promise<OrderItem[]>;
   abstract create(orderItem: OrderItem): Promise<OrderItem>;
   abstract createMany(orderItems: OrderItem[]): Promise<OrderItem[]>;
 }

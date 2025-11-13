@@ -1,8 +1,5 @@
 import { ErrorCode } from '@domain/common/constants/error-code';
-import {
-  DomainException,
-  ValidationException,
-} from '@domain/common/exceptions';
+import { ValidationException } from '@domain/common/exceptions';
 
 /**
  * OrderItem Entity
@@ -24,61 +21,24 @@ export class OrderItem {
     this.validateSubtotal();
   }
 
-  /**
-   * 가격 검증
-   */
   private validatePrice(): void {
     if (this.price < 0) {
-      throw new ValidationException('가격은 0 이상이어야 합니다');
+      throw new ValidationException(ErrorCode.INVALID_PRICE);
     }
   }
 
-  /**
-   * 수량 검증
-   */
   private validateQuantity(): void {
     if (!Number.isInteger(this.quantity) || this.quantity <= 0) {
-      throw new DomainException(ErrorCode.INVALID_QUANTITY);
+      throw new ValidationException(ErrorCode.INVALID_QUANTITY);
     }
   }
 
-  /**
-   * 소계 검증
-   */
   private validateSubtotal(): void {
     if (this.subtotal < 0) {
-      throw new ValidationException('소계는 0 이상이어야 합니다');
+      throw new ValidationException(ErrorCode.INVALID_AMOUNT);
     }
-
-    // 소계 = 가격 × 수량
     if (this.price * this.quantity !== this.subtotal) {
-      throw new ValidationException('소계가 올바르지 않습니다');
+      throw new ValidationException(ErrorCode.INVALID_AMOUNT);
     }
   }
-
-  // /**
-  //  * OrderItem 생성 (정적 팩토리 메서드)
-  //  * 주문 당시의 가격을 스냅샷으로 저장
-  //  */
-  // static create(
-  //   id: number,
-  //   orderId: number,
-  //   productOptionId: number,
-  //   productName: string,
-  //   price: number,
-  //   quantity: number,
-  // ): OrderItem {
-  //   const subtotal = price * quantity;
-
-  //   return new OrderItem(
-  //     id,
-  //     orderId,
-  //     productOptionId,
-  //     productName,
-  //     price,
-  //     quantity,
-  //     subtotal,
-  //     new Date(),
-  //   );
-  // }
 }
