@@ -88,14 +88,14 @@ export const ErrorCode = {
     code: 'U001',
     message: '사용자를 찾을 수 없음',
   },
+  UNAUTHORIZED: {
+    code: 'U002',
+    message: '권한이 없습니다',
+  },
 
   // Cart
   CART_ITEM_NOT_FOUND: {
     code: 'CART001',
     message: '장바구니 항목을 찾을 수 없음',
-  },
-  UNAUTHORIZED_CART_ACCESS: {
-    code: 'CART002',
-    message: '권한이 없습니다',
   },
 } as const;

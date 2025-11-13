@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { Response } from 'express';
 import { ValidationException } from '@domain/common/exceptions';
+import { ErrorCode } from '@domain/common/constants/error-code';
 
 /**
  * Validation Exception Filter
@@ -18,8 +19,8 @@ export class ValidationExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
 
     response.status(HttpStatus.BAD_REQUEST).json({
-      errorCode: 'VALIDATION_ERROR',
-      message: exception.message,
+      errorCode: exception.errorCode.code,
+      message: exception.errorCode.message,
       timestamp: new Date().toISOString(),
     });
   }

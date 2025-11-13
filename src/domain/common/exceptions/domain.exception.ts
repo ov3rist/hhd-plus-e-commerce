@@ -19,9 +19,11 @@ export class DomainException extends Error {
  * 엔티티 내부 데이터 무결성 검증 실패 시 사용
  */
 export class ValidationException extends Error {
-  constructor(message: string) {
-    super(message);
+  constructor(
+    public readonly errorCode: (typeof ErrorCode)[keyof typeof ErrorCode],
+  ) {
+    super(errorCode.message);
     this.name = 'ValidationException';
-    Object.setPrototypeOf(this, ValidationException.prototype);
+    Object.setPrototypeOf(this, DomainException.prototype);
   }
 }
