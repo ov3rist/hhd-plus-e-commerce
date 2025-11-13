@@ -15,7 +15,7 @@ describe('CouponService Integration Tests', () => {
   describe('쿠폰 발급 동시성 제어 (Coupon.issuedQuantity)', () => {
     it('동시에 100번 발급 시도 시 정확히 10개만 발급된다', async () => {
       // Given: 총 10개 쿠폰
-      const coupon = await couponRepository.save(
+      const coupon = await couponRepository.create(
         new Coupon(
           0,
           '선착순 쿠폰',
@@ -34,7 +34,7 @@ describe('CouponService Integration Tests', () => {
           const c = await couponRepository.findById(coupon.id);
           if (c) {
             c.issue();
-            await couponRepository.save(c);
+            await couponRepository.update(c);
           }
         }),
       );

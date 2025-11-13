@@ -1,4 +1,8 @@
-import { OrderService } from '@application/order.service';
+import { OrderFacade } from '@application/facades/order.facade';
+import { OrderDomainService } from '@domain/order/order.service';
+import { ProductDomainService } from '@domain/product/product.service';
+import { CouponDomainService } from '@domain/coupon/coupon.service';
+import { UserDomainService } from '@domain/user/user.service';
 import {
   OrderRepository,
   OrderItemRepository,
@@ -14,7 +18,7 @@ import { ProductOption } from '@domain/product/product-option.entity';
 import { User } from '@domain/user/user.entity';
 
 describe('결제 처리 통합 테스트 (US-009)', () => {
-  let orderService: OrderService;
+  let orderFacade: OrderFacade;
   let orderRepository: OrderRepository;
   let productRepository: ProductRepository;
   let productOptionRepository: ProductOptionRepository;
@@ -22,23 +26,45 @@ describe('결제 처리 통합 테스트 (US-009)', () => {
 
   beforeEach(() => {
     orderRepository = new OrderRepository();
-    const orderItemRepository = new OrderItemRepository(orderRepository);
+    const orderItemRepository = new OrderItemRepository();
     productRepository = new ProductRepository();
     productOptionRepository = new ProductOptionRepository();
     userRepository = new UserRepository();
     const balanceLogRepository = new UserBalanceChangeLogRepository();
     const couponRepository = new CouponRepository();
     const userCouponRepository = new UserCouponRepository();
+    const productPopularitySnapshotRepository = new (class {
+      async findAll() {
+        return [];
+      }
+      async create() {
+        return null;
+      }
+    })();
 
-    orderService = new OrderService(
+    const orderService = new OrderDomainService(
       orderRepository,
       orderItemRepository,
+    );
+    const productService = new ProductDomainService(
       productRepository,
       productOptionRepository,
-      userRepository,
-      balanceLogRepository,
+      productPopularitySnapshotRepository as any,
+    );
+    const couponService = new CouponDomainService(
       couponRepository,
       userCouponRepository,
+    );
+    const userService = new UserDomainService(
+      userRepository,
+      balanceLogRepository,
+    );
+
+    orderFacade = new OrderFacade(
+      orderService,
+      productService,
+      couponService,
+      userService,
     );
   });
 
@@ -47,11 +73,11 @@ describe('결제 처리 통합 테스트 (US-009)', () => {
       // Given: 3명의 사용자, 각 잔액 500,000원
       const users = await Promise.all(
         Array.from({ length: 3 }, () =>
-          userRepository.save(new User(0, 500000, new Date(), new Date())),
+          userRepository.create(new User(0, 500000, new Date(), new Date())),
         ),
       );
 
-      const product = await productRepository.save(
+      const product = await productRepository.create(
         new Product(
           0,
           '상품',
@@ -64,7 +90,7 @@ describe('결제 처리 통합 테스트 (US-009)', () => {
         ),
       );
 
-      const productOption = await productOptionRepository.save(
+      const productOption = await productOptionRepository.create(
         new ProductOption(
           0,
           product.id,
@@ -80,7 +106,7 @@ describe('결제 처리 통합 테스트 (US-009)', () => {
       // When: 3명이 각각 주문 생성 (재고 선점)
       const orders = await Promise.all(
         users.map((user) =>
-          orderService.createOrder(user.id, [
+          orderFacade.createOrder(user.id, [
             { productOptionId: productOption.id, quantity: 10 },
           ]),
         ),
@@ -89,7 +115,7 @@ describe('결제 처리 통합 테스트 (US-009)', () => {
       // When: 3명이 동시에 결제 (잔액 차감 + 재고 확정)
       await Promise.all(
         orders.map((order, idx) =>
-          orderService.processPayment(order.orderId, users[idx].id),
+          orderFacade.processPayment(order.orderId, users[idx].id),
         ),
       );
 
@@ -109,11 +135,11 @@ describe('결제 처리 통합 테스트 (US-009)', () => {
 
     it('결제 실패 시 잔액은 차감되지 않고 재고는 선점 상태로 유지된다', async () => {
       // Given: 충분한 잔액으로 주문 생성
-      const user = await userRepository.save(
+      const user = await userRepository.create(
         new User(0, 100000, new Date(), new Date()),
       );
 
-      const product = await productRepository.save(
+      const product = await productRepository.create(
         new Product(
           0,
           '고가 상품',
@@ -126,7 +152,7 @@ describe('결제 처리 통합 테스트 (US-009)', () => {
         ),
       );
 
-      const productOption = await productOptionRepository.save(
+      const productOption = await productOptionRepository.create(
         new ProductOption(
           0,
           product.id,
@@ -140,18 +166,18 @@ describe('결제 처리 통합 테스트 (US-009)', () => {
       );
 
       // When: 주문 생성 (재고 선점 성공)
-      const order = await orderService.createOrder(user.id, [
+      const order = await orderFacade.createOrder(user.id, [
         { productOptionId: productOption.id, quantity: 1 },
       ]);
 
       // Given: 잔액을 부족하게 만듦 (다른 주문으로 소진)
       const userForDeduct = await userRepository.findById(user.id);
-      userForDeduct!.deduct(90000, '테스트 차감', 999);
-      await userRepository.save(userForDeduct!);
+      userForDeduct!.deduct(90000, 999, '테스트 차감');
+      await userRepository.update(userForDeduct!);
 
       // When: 결제 시도 (잔액 부족으로 실패)
       await expect(
-        orderService.processPayment(order.orderId, user.id),
+        orderFacade.processPayment(order.orderId, user.id),
       ).rejects.toThrow();
 
       // Then: 잔액은 10,000원 유지
