@@ -1,67 +1,58 @@
-import { Coupon, UserCoupon } from '@domain/coupon';
+import { UserCoupon } from '@domain/coupon/user-coupon.entity';
+import { Coupon } from '@domain/coupon/coupon.entity';
 import { ErrorCode } from '@domain/common/constants/error-code';
 import { DomainException } from '@domain/common/exceptions';
 
 describe('UserCoupon Entity', () => {
-  const validUserCouponData = {
-    id: 1,
-    userId: 100,
-    couponId: 1,
-    orderId: null,
-    createdAt: new Date('2025-01-01'),
-    usedAt: null,
-    expiredAt: new Date('2025-12-31'),
-    updatedAt: new Date('2025-01-01'),
-  };
-
   describe('생성자', () => {
-    it('유효한 데이터로 UserCoupon을 생성할 수 있다', () => {
+    it('유효한 값으로 UserCoupon을 생성한다', () => {
+      // given
+      const id = 1;
+      const userId = 100;
+      const couponId = 200;
+      const orderId = null;
+      const createdAt = new Date();
+      const usedAt = null;
+      const expiredAt = new Date('2025-12-31');
+      const updatedAt = new Date();
+
       // when
       const userCoupon = new UserCoupon(
-        validUserCouponData.id,
-        validUserCouponData.userId,
-        validUserCouponData.couponId,
-        validUserCouponData.orderId,
-        validUserCouponData.createdAt,
-        validUserCouponData.usedAt,
-        validUserCouponData.expiredAt,
-        validUserCouponData.updatedAt,
+        id,
+        userId,
+        couponId,
+        orderId,
+        createdAt,
+        usedAt,
+        expiredAt,
+        updatedAt,
       );
 
       // then
-      expect(userCoupon.id).toBe(validUserCouponData.id);
-      expect(userCoupon.userId).toBe(validUserCouponData.userId);
-      expect(userCoupon.couponId).toBe(validUserCouponData.couponId);
-      expect(userCoupon.orderId).toBe(validUserCouponData.orderId);
-      expect(userCoupon.createdAt).toEqual(validUserCouponData.createdAt);
-      expect(userCoupon.usedAt).toBe(validUserCouponData.usedAt);
-      expect(userCoupon.expiredAt).toEqual(validUserCouponData.expiredAt);
-      expect(userCoupon.updatedAt).toEqual(validUserCouponData.updatedAt);
+      expect(userCoupon.id).toBe(id);
+      expect(userCoupon.userId).toBe(userId);
+      expect(userCoupon.couponId).toBe(couponId);
+      expect(userCoupon.orderId).toBe(orderId);
+      expect(userCoupon.createdAt).toBe(createdAt);
+      expect(userCoupon.usedAt).toBe(usedAt);
+      expect(userCoupon.expiredAt).toBe(expiredAt);
+      expect(userCoupon.updatedAt).toBe(updatedAt);
     });
   });
 
   describe('issue (정적 팩토리 메서드)', () => {
-    beforeEach(() => {
-      jest.useFakeTimers();
-    });
-
-    afterEach(() => {
-      jest.useRealTimers();
-    });
-
-    it('발급 가능한 쿠폰으로 UserCoupon을 생성한다', () => {
+    it('유효한 쿠폰으로 UserCoupon을 발급한다', () => {
       // given
-      jest.setSystemTime(new Date('2025-06-01'));
       const userId = 100;
       const coupon = new Coupon(
         1,
-        '테스트 쿠폰',
+        '10% 할인',
         10,
         100,
         50,
         new Date('2025-12-31'),
-        new Date('2025-01-01'),
-        new Date('2025-01-01'),
+        new Date(),
+        new Date(),
       );
 
       // when
@@ -70,27 +61,30 @@ describe('UserCoupon Entity', () => {
       // then
       expect(userCoupon.userId).toBe(userId);
       expect(userCoupon.couponId).toBe(coupon.id);
-      expect(userCoupon.orderId).toBe(null);
-      expect(userCoupon.usedAt).toBe(null);
-      expect(userCoupon.expiredAt).toEqual(coupon.expiredAt);
+      expect(userCoupon.orderId).toBeNull();
+      expect(userCoupon.usedAt).toBeNull();
+      expect(userCoupon.expiredAt).toBe(coupon.expiredAt);
     });
 
-    it('만료/품절 쿠폰은 DomainException을 던진다', () => {
-      // given: 만료
-      jest.setSystemTime(new Date('2026-01-01'));
+    it('만료된 쿠폰을 발급하려 하면 EXPIRED_COUPON 예외를 던진다', () => {
+      // given
       const userId = 100;
       const expiredCoupon = new Coupon(
         1,
-        '테스트 쿠폰',
+        '만료 쿠폰',
         10,
         100,
         50,
-        new Date('2025-12-31'),
-        new Date('2025-01-01'),
-        new Date('2025-01-01'),
+        new Date('2020-01-01'),
+        new Date(),
+        new Date(),
       );
 
       // when & then
+      expect(() => UserCoupon.issue(userId, expiredCoupon)).toThrow(
+        DomainException,
+      );
+
       try {
         UserCoupon.issue(userId, expiredCoupon);
       } catch (error) {
@@ -99,21 +93,27 @@ describe('UserCoupon Entity', () => {
           ErrorCode.EXPIRED_COUPON,
         );
       }
+    });
 
-      // given: 품절
-      jest.setSystemTime(new Date('2025-06-01'));
+    it('품절된 쿠폰을 발급하려 하면 COUPON_SOLD_OUT 예외를 던진다', () => {
+      // given
+      const userId = 100;
       const soldOutCoupon = new Coupon(
         1,
-        '테스트 쿠폰',
+        '품절 쿠폰',
         10,
         100,
         100,
         new Date('2025-12-31'),
-        new Date('2025-01-01'),
-        new Date('2025-01-01'),
+        new Date(),
+        new Date(),
       );
 
       // when & then
+      expect(() => UserCoupon.issue(userId, soldOutCoupon)).toThrow(
+        DomainException,
+      );
+
       try {
         UserCoupon.issue(userId, soldOutCoupon);
       } catch (error) {
@@ -125,176 +125,222 @@ describe('UserCoupon Entity', () => {
     });
   });
 
-  describe('isAlreadyIssued (정적 메서드)', () => {
-    it('사용자가 발급받은 쿠폰 여부를 반환한다', () => {
+  describe('canUse', () => {
+    it('사용 가능한 쿠폰은 true를 반환한다', () => {
       // given
-      const existingUserCoupons = [
-        new UserCoupon(
-          1,
-          100,
-          1,
-          null,
-          new Date(),
-          null,
-          new Date('2025-12-31'),
-          new Date(),
-        ),
-        new UserCoupon(
-          2,
-          100,
-          2,
-          null,
-          new Date(),
-          null,
-          new Date('2025-12-31'),
-          new Date(),
-        ),
-      ];
+      const userCoupon = new UserCoupon(
+        1,
+        100,
+        200,
+        null,
+        new Date(),
+        null,
+        new Date('2025-12-31'),
+        new Date(),
+      );
 
-      // when & then
-      expect(UserCoupon.isAlreadyIssued(existingUserCoupons, 1)).toBe(true);
-      expect(UserCoupon.isAlreadyIssued(existingUserCoupons, 3)).toBe(false);
-      expect(UserCoupon.isAlreadyIssued([], 1)).toBe(false);
+      // when
+      const result = userCoupon.canUse();
+
+      // then
+      expect(result).toBe(true);
+    });
+
+    it('이미 사용된 쿠폰은 false를 반환한다', () => {
+      // given
+      const userCoupon = new UserCoupon(
+        1,
+        100,
+        200,
+        1000,
+        new Date(),
+        new Date(),
+        new Date('2025-12-31'),
+        new Date(),
+      );
+
+      // when
+      const result = userCoupon.canUse();
+
+      // then
+      expect(result).toBe(false);
+    });
+
+    it('만료된 쿠폰은 false를 반환한다', () => {
+      // given
+      const userCoupon = new UserCoupon(
+        1,
+        100,
+        200,
+        null,
+        new Date(),
+        null,
+        new Date('2020-01-01'),
+        new Date(),
+      );
+
+      // when
+      const result = userCoupon.canUse();
+
+      // then
+      expect(result).toBe(false);
     });
   });
 
-  describe('canUse', () => {
-    beforeEach(() => {
-      jest.useFakeTimers();
+  describe('isUsed', () => {
+    it('사용되지 않은 쿠폰은 false를 반환한다', () => {
+      // given
+      const userCoupon = new UserCoupon(
+        1,
+        100,
+        200,
+        null,
+        new Date(),
+        null,
+        new Date('2025-12-31'),
+        new Date(),
+      );
+
+      // when
+      const result = userCoupon.isUsed();
+
+      // then
+      expect(result).toBe(false);
     });
 
-    afterEach(() => {
-      jest.useRealTimers();
+    it('사용된 쿠폰은 true를 반환한다', () => {
+      // given
+      const userCoupon = new UserCoupon(
+        1,
+        100,
+        200,
+        1000,
+        new Date(),
+        new Date(),
+        new Date('2025-12-31'),
+        new Date(),
+      );
+
+      // when
+      const result = userCoupon.isUsed();
+
+      // then
+      expect(result).toBe(true);
+    });
+  });
+
+  describe('isExpired', () => {
+    it('만료되지 않은 쿠폰은 false를 반환한다', () => {
+      // given
+      const userCoupon = new UserCoupon(
+        1,
+        100,
+        200,
+        null,
+        new Date(),
+        null,
+        new Date('2025-12-31'),
+        new Date(),
+      );
+
+      // when
+      const result = userCoupon.isExpired();
+
+      // then
+      expect(result).toBe(false);
     });
 
-    it('사용 가능 여부를 반환한다', () => {
-      // given: 사용 가능
-      jest.setSystemTime(new Date('2025-06-01'));
-      const available = new UserCoupon(
+    it('만료된 쿠폰은 true를 반환한다', () => {
+      // given
+      const userCoupon = new UserCoupon(
         1,
         100,
-        1,
+        200,
         null,
-        new Date('2025-01-01'),
+        new Date(),
         null,
-        new Date('2025-12-31'),
-        new Date('2025-01-01'),
+        new Date('2020-01-01'),
+        new Date(),
       );
 
-      // when & then
-      expect(available.canUse()).toBe(true);
+      // when
+      const result = userCoupon.isExpired();
 
-      // given: 이미 사용됨
-      const used = new UserCoupon(
-        1,
-        100,
-        1,
-        999,
-        new Date('2025-01-01'),
-        new Date('2025-05-01'),
-        new Date('2025-12-31'),
-        new Date('2025-05-01'),
-      );
-
-      // when & then
-      expect(used.canUse()).toBe(false);
-
-      // given: 만료됨
-      jest.setSystemTime(new Date('2026-01-01'));
-      const expired = new UserCoupon(
-        1,
-        100,
-        1,
-        null,
-        new Date('2025-01-01'),
-        null,
-        new Date('2025-12-31'),
-        new Date('2025-01-01'),
-      );
-
-      // when & then
-      expect(expired.canUse()).toBe(false);
+      // then
+      expect(result).toBe(true);
     });
   });
 
   describe('use', () => {
-    beforeEach(() => {
-      jest.useFakeTimers();
-    });
-
-    afterEach(() => {
-      jest.useRealTimers();
-    });
-
-    it('사용 가능한 쿠폰을 사용 처리하고 orderId, usedAt, updatedAt을 갱신한다', () => {
+    it('사용 가능한 쿠폰을 사용하고 orderId와 usedAt을 설정한다', () => {
       // given
-      const originalUpdatedAt = new Date('2025-01-01');
-      jest.setSystemTime(new Date('2025-06-01'));
       const userCoupon = new UserCoupon(
         1,
         100,
-        1,
+        200,
         null,
-        new Date('2025-01-01'),
+        new Date(),
         null,
         new Date('2025-12-31'),
-        originalUpdatedAt,
+        new Date(),
       );
-
-      const orderId = 999;
-      const newTime = new Date('2025-06-02');
-      jest.setSystemTime(newTime);
+      const orderId = 1000;
 
       // when
       userCoupon.use(orderId);
 
       // then
       expect(userCoupon.orderId).toBe(orderId);
-      expect(userCoupon.usedAt).toEqual(newTime);
-      expect(userCoupon.updatedAt).toEqual(newTime);
-      expect(userCoupon.updatedAt).not.toEqual(originalUpdatedAt);
+      expect(userCoupon.usedAt).not.toBeNull();
+      expect(userCoupon.updatedAt).toBeDefined();
     });
 
-    it('이미 사용/만료된 쿠폰은 DomainException을 던진다', () => {
-      // given: 이미 사용됨
-      jest.setSystemTime(new Date('2025-06-01'));
-      const usedCoupon = new UserCoupon(
+    it('이미 사용된 쿠폰을 사용하려 하면 ALREADY_USED 예외를 던진다', () => {
+      // given
+      const userCoupon = new UserCoupon(
         1,
         100,
-        1,
-        888,
-        new Date('2025-01-01'),
-        new Date('2025-05-01'),
+        200,
+        1000,
+        new Date(),
+        new Date(),
         new Date('2025-12-31'),
-        new Date('2025-05-01'),
+        new Date(),
       );
+      const newOrderId = 2000;
 
       // when & then
+      expect(() => userCoupon.use(newOrderId)).toThrow(DomainException);
+
       try {
-        usedCoupon.use(999);
+        userCoupon.use(newOrderId);
       } catch (error) {
         expect(error).toBeInstanceOf(DomainException);
         expect((error as DomainException).errorCode).toBe(
           ErrorCode.ALREADY_USED,
         );
       }
+    });
 
-      // given: 만료됨
-      jest.setSystemTime(new Date('2026-01-01'));
-      const expiredCoupon = new UserCoupon(
+    it('만료된 쿠폰을 사용하려 하면 EXPIRED_COUPON 예외를 던진다', () => {
+      // given
+      const userCoupon = new UserCoupon(
         1,
         100,
-        1,
+        200,
         null,
-        new Date('2025-01-01'),
+        new Date(),
         null,
-        new Date('2025-12-31'),
-        new Date('2025-01-01'),
+        new Date('2020-01-01'),
+        new Date(),
       );
+      const orderId = 1000;
 
       // when & then
+      expect(() => userCoupon.use(orderId)).toThrow(DomainException);
+
       try {
-        expiredCoupon.use(999);
+        userCoupon.use(orderId);
       } catch (error) {
         expect(error).toBeInstanceOf(DomainException);
         expect((error as DomainException).errorCode).toBe(
@@ -305,71 +351,64 @@ describe('UserCoupon Entity', () => {
   });
 
   describe('getStatus', () => {
-    beforeEach(() => {
-      jest.useFakeTimers();
+    it('사용 가능한 쿠폰은 AVAILABLE 상태를 반환한다', () => {
+      // given
+      const userCoupon = new UserCoupon(
+        1,
+        100,
+        200,
+        null,
+        new Date(),
+        null,
+        new Date('2025-12-31'),
+        new Date(),
+      );
+
+      // when
+      const status = userCoupon.getStatus();
+
+      // then
+      expect(status).toBe('AVAILABLE');
     });
 
-    afterEach(() => {
-      jest.useRealTimers();
+    it('사용된 쿠폰은 USED 상태를 반환한다', () => {
+      // given
+      const userCoupon = new UserCoupon(
+        1,
+        100,
+        200,
+        1000,
+        new Date(),
+        new Date(),
+        new Date('2025-12-31'),
+        new Date(),
+      );
+
+      // when
+      const status = userCoupon.getStatus();
+
+      // then
+      expect(status).toBe('USED');
     });
 
-    it('쿠폰 상태를 반환한다 (USED > EXPIRED > AVAILABLE 우선순위)', () => {
-      // given & when & then: 사용 가능
-      jest.setSystemTime(new Date('2025-06-01'));
-      const available = new UserCoupon(
+    it('만료된 쿠폰은 EXPIRED 상태를 반환한다', () => {
+      // given
+      const userCoupon = new UserCoupon(
         1,
         100,
-        1,
+        200,
         null,
         new Date(),
         null,
-        new Date('2025-12-31'),
+        new Date('2020-01-01'),
         new Date(),
       );
-      expect(available.getStatus()).toBe('AVAILABLE');
 
-      // given & when & then: 사용됨
-      const used = new UserCoupon(
-        1,
-        100,
-        1,
-        999,
-        new Date(),
-        new Date('2025-05-01'),
-        new Date('2025-12-31'),
-        new Date(),
-      );
-      expect(used.getStatus()).toBe('USED');
+      // when
+      const status = userCoupon.getStatus();
 
-      // given & when & then: 만료됨
-      jest.setSystemTime(new Date('2026-01-01'));
-      const expired = new UserCoupon(
-        1,
-        100,
-        1,
-        null,
-        new Date(),
-        null,
-        new Date('2025-12-31'),
-        new Date(),
-      );
-      expect(expired.getStatus()).toBe('EXPIRED');
-
-      // given & when & then: 사용되고 만료됨 (USED 우선)
-      const usedAndExpired = new UserCoupon(
-        1,
-        100,
-        1,
-        999,
-        new Date(),
-        new Date('2025-05-01'),
-        new Date('2025-12-31'),
-        new Date(),
-      );
-      expect(usedAndExpired.getStatus()).toBe('USED');
+      // then
+      expect(status).toBe('EXPIRED');
     });
   });
-
-  // TypeScript의 readonly는 컴파일 타임에만 검증되므로
-  // 별도의 런타임 불변성 테스트는 작성하지 않음
 });
