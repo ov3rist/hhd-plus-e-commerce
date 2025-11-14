@@ -22,6 +22,13 @@ export class ProductRepository implements IProductRepository {
     return this.products.get(id) || null;
   }
 
+  // ANCHOR product.findManyByIds
+  async findManyByIds(ids: number[]): Promise<Product[]> {
+    return ids
+      .map((id) => this.products.get(id))
+      .filter((product): product is Product => product !== undefined);
+  }
+
   // ANCHOR product.findAll
   async findAll(): Promise<Product[]> {
     return Array.from(this.products.values());
@@ -63,6 +70,13 @@ export class ProductOptionRepository implements IProductOptionRepository {
   // ANCHOR productOption.findById
   async findById(id: number): Promise<ProductOption | null> {
     return this.productOptions.get(id) || null;
+  }
+
+  // ANCHOR productOption.findManyByIds
+  async findManyByIds(ids: number[]): Promise<ProductOption[]> {
+    return ids
+      .map((id) => this.productOptions.get(id))
+      .filter((option): option is ProductOption => option !== undefined);
   }
 
   // ANCHOR productOption.findManyByProductId

@@ -5,7 +5,7 @@ import { ICouponRepository, IUserCouponRepository } from '@domain/interfaces';
 import {
   CouponRepository,
   UserCouponRepository,
-} from '@infrastructure/repositories';
+} from '@infrastructure/repositories/prisma';
 import { CouponController } from '@presentation/coupon';
 
 /**

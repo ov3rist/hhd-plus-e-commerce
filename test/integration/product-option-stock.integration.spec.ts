@@ -13,27 +13,46 @@ import {
   UserBalanceChangeLogRepository,
   CouponRepository,
   UserCouponRepository,
-} from '@infrastructure/repositories';
+} from '@infrastructure/repositories/prisma';
 import { Product } from '@domain/product/product.entity';
 import { ProductOption } from '@domain/product/product-option.entity';
 import { User } from '@domain/user/user.entity';
+import { PrismaService } from '@infrastructure/prisma/prisma.service';
+import {
+  setupIntegrationTest,
+  cleanupDatabase,
+  teardownIntegrationTest,
+} from './setup';
 
 describe('동시성 제어 통합 테스트', () => {
+  let prismaService: PrismaService;
   let orderFacade: OrderFacade;
   let userFacade: UserFacade;
   let productRepository: ProductRepository;
   let productOptionRepository: ProductOptionRepository;
   let userRepository: UserRepository;
 
-  beforeEach(() => {
-    const orderRepository = new OrderRepository();
-    const orderItemRepository = new OrderItemRepository();
-    productRepository = new ProductRepository();
-    productOptionRepository = new ProductOptionRepository();
-    userRepository = new UserRepository();
-    const balanceLogRepository = new UserBalanceChangeLogRepository();
-    const couponRepository = new CouponRepository();
-    const userCouponRepository = new UserCouponRepository();
+  beforeAll(async () => {
+    prismaService = await setupIntegrationTest();
+  }, 60000); // 60초 타임아웃
+
+  afterAll(async () => {
+    await teardownIntegrationTest();
+  });
+
+  beforeEach(async () => {
+    await cleanupDatabase(prismaService);
+
+    const orderRepository = new OrderRepository(prismaService);
+    const orderItemRepository = new OrderItemRepository(prismaService);
+    productRepository = new ProductRepository(prismaService);
+    productOptionRepository = new ProductOptionRepository(prismaService);
+    userRepository = new UserRepository(prismaService);
+    const balanceLogRepository = new UserBalanceChangeLogRepository(
+      prismaService,
+    );
+    const couponRepository = new CouponRepository(prismaService);
+    const userCouponRepository = new UserCouponRepository(prismaService);
     const productPopularitySnapshotRepository = new (class {
       async findAll() {
         return [];
@@ -66,9 +85,10 @@ describe('동시성 제어 통합 테스트', () => {
       productService,
       couponService,
       userService,
+      prismaService,
     );
 
-    userFacade = new UserFacade(userService);
+    userFacade = new UserFacade(userService, prismaService);
   });
 
   describe('product-option.stock 동시성', () => {

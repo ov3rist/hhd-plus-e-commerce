@@ -1,14 +1,30 @@
 import {
   CouponRepository,
   UserCouponRepository,
-} from '@infrastructure/repositories';
+} from '@infrastructure/repositories/prisma';
 import { Coupon } from '@domain/coupon/coupon.entity';
+import { PrismaService } from '@infrastructure/prisma/prisma.service';
+import {
+  setupIntegrationTest,
+  cleanupDatabase,
+  teardownIntegrationTest,
+} from './setup';
 
 describe('CouponService Integration Tests', () => {
+  let prismaService: PrismaService;
   let couponRepository: CouponRepository;
 
-  beforeEach(() => {
-    couponRepository = new CouponRepository();
+  beforeAll(async () => {
+    prismaService = await setupIntegrationTest();
+  }, 60000); // 60초 타임아웃
+
+  afterAll(async () => {
+    await teardownIntegrationTest();
+  });
+
+  beforeEach(async () => {
+    await cleanupDatabase(prismaService);
+    couponRepository = new CouponRepository(prismaService);
   });
 
   describe('쿠폰 발급 동시성 제어 (Coupon.issuedQuantity)', () => {
@@ -27,14 +43,16 @@ describe('CouponService Integration Tests', () => {
         ),
       );
 
-      // When: 100번 동시에 발급 시도 (직접 coupon.issue() 호출)
+      // When: 100번 동시에 발급 시도 (트랜잭션으로 동시성 제어)
       const results = await Promise.allSettled(
         Array.from({ length: 100 }, async () => {
-          const c = await couponRepository.findById(coupon.id);
-          if (c) {
-            c.issue();
-            await couponRepository.update(c);
-          }
+          return await prismaService.runInTransaction(async () => {
+            const c = await couponRepository.findById(coupon.id);
+            if (c) {
+              c.issue();
+              await couponRepository.update(c);
+            }
+          });
         }),
       );
 

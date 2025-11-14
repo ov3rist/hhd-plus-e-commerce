@@ -43,6 +43,17 @@ export class ProductDomainService {
   }
 
   /**
+   * ANCHOR 상품 일괄 조회
+   */
+  async getProductsByIds(productIds: number[]): Promise<Product[]> {
+    if (productIds.length === 0) {
+      return [];
+    }
+    const products = await this.productRepository.findManyByIds(productIds);
+    return products;
+  }
+
+  /**
    * ANCHOR 상품 상세 및 옵션 조회 (재고 포함)
    */
   async getProductOptions(productId: number): Promise<ProductOption[]> {
@@ -61,6 +72,20 @@ export class ProductDomainService {
       throw new ValidationException(ErrorCode.PRODUCT_OPTION_NOT_FOUND);
     }
     return option;
+  }
+
+  /**
+   * ANCHOR 상품 옵션 일괄 조회
+   */
+  async getProductOptionsByIds(
+    productOptionIds: number[],
+  ): Promise<ProductOption[]> {
+    if (productOptionIds.length === 0) {
+      return [];
+    }
+    const options =
+      await this.productOptionRepository.findManyByIds(productOptionIds);
+    return options;
   }
 
   /**

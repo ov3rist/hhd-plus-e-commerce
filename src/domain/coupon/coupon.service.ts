@@ -28,6 +28,17 @@ export class CouponDomainService {
   }
 
   /**
+   * ANCHOR 쿠폰 일괄 조회
+   */
+  async getCouponsByIds(couponIds: number[]): Promise<Coupon[]> {
+    if (couponIds.length === 0) {
+      return [];
+    }
+    const coupons = await this.couponRepository.findManyByIds(couponIds);
+    return coupons;
+  }
+
+  /**
    * ANCHOR 사용자 쿠폰 목록 조회
    */
   async getUserCoupons(userId: number): Promise<UserCoupon[]> {
