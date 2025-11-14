@@ -29,6 +29,17 @@ export class ProductRepository implements IProductRepository {
     return record ? this.mapToDomain(record) : null;
   }
 
+  // ANCHOR product.findManyByIds
+  async findManyByIds(ids: number[]): Promise<Product[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+    const records = await this.prismaClient.products.findMany({
+      where: { id: { in: ids } },
+    });
+    return records.map((record) => this.mapToDomain(record));
+  }
+
   // ANCHOR product.findAll
   async findAll(): Promise<Product[]> {
     const records = await this.prismaClient.products.findMany();
@@ -119,6 +130,17 @@ export class ProductOptionRepository implements IProductOptionRepository {
       where: { id },
     });
     return record ? this.mapToDomain(record) : null;
+  }
+
+  // ANCHOR productOption.findManyByIds
+  async findManyByIds(ids: number[]): Promise<ProductOption[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+    const records = await this.prismaClient.product_options.findMany({
+      where: { id: { in: ids } },
+    });
+    return records.map((record) => this.mapToDomain(record));
   }
 
   // ANCHOR productOption.findManyByProductId
