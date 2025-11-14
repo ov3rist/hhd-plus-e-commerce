@@ -1,4 +1,4 @@
-폴더 구조
+## 폴더 구조
 
 ```
 src/
@@ -8,26 +8,60 @@ src/
 │   ├── order/            # 주문 컨트롤러, DTO
 │   ├── product/          # 상품 컨트롤러, DTO
 │   ├── user/             # 사용자 컨트롤러, DTO
-│   └── common/           # 공통 미들웨어, Exception 필터 미들웨어 정의
+│   └── common/           # 공통 필터 (Domain/Validation Exception 필터)
 │
 ├── application/           # 유스케이스 계층
-│   └── *.facade.ts       # 트랜잭션 경계, 비즈니스 플로우("결제"+"쿠폰사용" 구현, 컨트롤러와 1:1)
+│   └── facades/          # "트랜잭션 경계", 비즈니스 플로우 조합
+│       ├── cart.facade.ts
+│       ├── coupon.facade.ts
+│       ├── order.facade.ts
+│       ├── product.facade.ts
+│       └── user.facade.ts
 │
 ├── domain/                # 도메인 계층
-│   ├── cart/             # 장바구니 엔티티
-│   ├── coupon/           # 쿠폰, 사용자쿠폰 엔티티
-│   ├── order/            # 주문, 주문상품 엔티티
-│   ├── product/          # 상품, 상품옵션, 인기상품스냅샷 엔티티
-│   ├── user/             # 사용자, 잔액변경로그 엔티티
-│   ├── common/           # 공통 Exception 클래스 정의, 상수
-│   ├── *.service.ts      # 도메인 서비스("결제", "쿠폰사용" 구현)
-│   └── interfaces/       # 리포지토리 인터페이스 정의(도메인 서비스(*.service.ts)가 사용)
+│   ├── cart/             # 장바구니 엔티티, 도메인 서비스
+│   │   ├── cart-item.entity.ts
+│   │   ├── cart.service.ts
+│   │   └── index.ts
+│   ├── coupon/           # 쿠폰, 사용자쿠폰 엔티티, 도메인 서비스
+│   │   ├── coupon.entity.ts
+│   │   ├── user-coupon.entity.ts
+│   │   ├── coupon.service.ts
+│   │   └── index.ts
+│   ├── order/            # 주문, 주문상품 엔티티, 도메인 서비스
+│   │   ├── order.entity.ts
+│   │   ├── order-item.entity.ts
+│   │   ├── order-status.vo.ts
+│   │   ├── transaction-out-failure-log.entity.ts
+│   │   ├── order.service.ts
+│   │   └── index.ts
+│   ├── product/          # 상품, 상품옵션, 인기상품스냅샷 엔티티, 도메인 서비스
+│   │   ├── product.entity.ts
+│   │   ├── product-option.entity.ts
+│   │   ├── product-popularity-snapshot.entity.ts
+│   │   ├── product.service.ts
+│   │   └── index.ts
+│   ├── user/             # 사용자, 잔액변경로그 엔티티, 도메인 서비스
+│   │   ├── user.entity.ts
+│   │   ├── user-balance-change-log.entity.ts
+│   │   ├── user.service.ts
+│   │   └── index.ts
+│   ├── common/           # 공통 도메인 예외, 에러코드 상수
+│   │   ├── exceptions/
+│   │   └── constants/
+│   └── interfaces/       # 리포지토리 인터페이스 정의
+│       └── *.repository.interface.ts
 │
 └── infrastructure/        # 인프라 계층
     ├── common/           # 인프라 유틸 (MutexManager)
     ├── modules/          # NestJS 모듈 설정
-    ├── repositories/     # 인메모리 리포지토리 구현체
+    ├── prisma/           # Prisma 설정, 트랜잭션 컨텍스트 (데코레이터 포함)
+    ├── repositories/     # 리포지토리 구현체
+    │   ├── memory-repository/  # 인메모리 구현
+    │   └── prisma/             # Prisma 구현
     └── schedulers/       # 배치 스케줄러
+        ├── order-expiration.scheduler.ts
+        └── product-popularity.scheduler.ts
 ```
 
 **계층별 역할:**
