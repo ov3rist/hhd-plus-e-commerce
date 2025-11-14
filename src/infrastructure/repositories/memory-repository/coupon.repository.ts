@@ -19,6 +19,13 @@ export class CouponRepository implements ICouponRepository {
     return this.coupons.get(id) || null;
   }
 
+  // ANCHOR coupon.findManyByIds
+  async findManyByIds(ids: number[]): Promise<Coupon[]> {
+    return ids
+      .map((id) => this.coupons.get(id))
+      .filter((coupon): coupon is Coupon => coupon !== undefined);
+  }
+
   // ANCHOR coupon.findAll
   async findAll(): Promise<Coupon[]> {
     return Array.from(this.coupons.values());

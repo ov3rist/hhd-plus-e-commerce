@@ -36,6 +36,17 @@ export class CouponRepository implements ICouponRepository {
     return record ? this.mapToDomain(record) : null;
   }
 
+  // ANCHOR coupon.findManyByIds
+  async findManyByIds(ids: number[]): Promise<Coupon[]> {
+    if (ids.length === 0) {
+      return [];
+    }
+    const records = await this.prismaClient.coupons.findMany({
+      where: { id: { in: ids } },
+    });
+    return records.map((record) => this.mapToDomain(record));
+  }
+
   // ANCHOR coupon.findAll
   async findAll(): Promise<Coupon[]> {
     const records = await this.prismaClient.coupons.findMany();

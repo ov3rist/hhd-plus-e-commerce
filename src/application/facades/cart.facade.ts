@@ -24,22 +24,34 @@ export class CartFacade {
 
   /**
    * ANCHOR 장바구니-상품옵션 조회 뷰 반환
+   *
+   * ✅ [성능 최적화 완료] N+1 쿼리 문제 해결
+   * 개선 사항:
+   * - IN 절을 활용한 일괄 조회로 변경
+   * - 쿼리 횟수: O(n) → O(1)로 개선
+   * - 장바구니 100개 기준: 201번 쿼리 → 3번 쿼리 (98.5% 감소)
    */
   async getCartView(userId: number): Promise<CartItemView[]> {
     // 카트 조회
     const cartItems = await this.cartService.getCart(userId);
 
+    if (cartItems.length === 0) {
+      return [];
+    }
+
     const optionIds = cartItems.map((item) => item.productOptionId);
 
-    // 상품 옵션 및 상품 조회 후 뷰 매핑
-    const productOptions = await Promise.all(
-      optionIds.map((id) => this.productService.getProductOption(id)),
-    );
+    // ✅ N번 쿼리 → 1번 쿼리로 개선 (IN 절 활용)
+    const productOptions =
+      await this.productService.getProductOptionsByIds(optionIds);
 
-    const productIds = productOptions.map((option) => option.productId);
-    const products = await Promise.all(
-      productIds.map((id) => this.productService.getProduct(id)),
-    );
+    const productIds = [
+      ...new Set(productOptions.map((option) => option.productId)),
+    ];
+
+    // ✅ M번 쿼리 → 1번 쿼리로 개선 (IN 절 활용)
+    const products = await this.productService.getProductsByIds(productIds);
+
     const productMap = new Map<number, Product>();
     products.forEach((product) => productMap.set(product.id, product));
 

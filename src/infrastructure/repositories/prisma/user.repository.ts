@@ -108,6 +108,23 @@ export class UserBalanceChangeLogRepository
   }
 
   // ANCHOR userBalanceChangeLog.findByUserId
+  /**
+   * TODO: [성능 개선 필요] ORDER BY 최적화
+   * 현재 상태: WHERE user_id = ? ORDER BY created_at DESC
+   *
+   * 개선 방안:
+   * 1. 복합 인덱스 추가: (user_id, created_at DESC)
+   *    - 현재는 user_id 단일 인덱스만 존재
+   * 2. 인덱스 생성 쿼리:
+   *    CREATE INDEX idx_balance_log_user_created ON user_balance_change_log(user_id, created_at DESC);
+   * 3. 페이징 추가 고려:
+   *    - 잔액 변경 로그는 계속 증가하는 데이터
+   *    - LIMIT, OFFSET을 활용한 페이징 필요
+   *
+   * 예상 효과:
+   * - 정렬을 위한 filesort 연산 제거
+   * - 대용량 데이터에서도 안정적인 성능 보장
+   */
   async findByUserId(userId: number): Promise<UserBalanceChangeLog[]> {
     const records = await this.prismaClient.user_balance_change_log.findMany({
       where: { user_id: userId },

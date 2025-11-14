@@ -25,6 +25,7 @@ CREATE TABLE user_balance_change_log (
     ref_id BIGINT NULL COMMENT "(Optional) 참조 테이블의 PK",
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_user_id (user_id),
+    INDEX idx_balance_log_user_created (user_id, created_at DESC) COMMENT '잔액 변경 로그 조회 최적화: WHERE user_id + ORDER BY created_at',
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -98,6 +99,7 @@ CREATE TABLE orders (
     INDEX idx_user_id (user_id),
     INDEX idx_created_at (created_at),
     INDEX idx_paid_at (paid_at),
+    INDEX idx_orders_user_created (user_id, created_at DESC) COMMENT '주문 내역 조회 최적화: WHERE user_id + ORDER BY created_at',
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE RESTRICT,
     FOREIGN KEY (coupon_id) REFERENCES coupons(id) ON DELETE RESTRICT
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -150,6 +152,7 @@ CREATE TABLE product_popularity_snapshot (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_created_at (created_at),
     INDEX idx_rank (`rank`),
+    INDEX idx_snapshot_created_rank (created_at DESC, `rank` ASC) COMMENT '인기 상품 조회 최적화: WHERE created_at + ORDER BY rank',
     FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 

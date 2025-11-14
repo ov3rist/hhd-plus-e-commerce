@@ -7,6 +7,7 @@ import { UserCoupon } from '@domain/coupon/user-coupon.entity';
  */
 export abstract class ICouponRepository {
   abstract findById(id: number): Promise<Coupon | null>;
+  abstract findManyByIds(ids: number[]): Promise<Coupon[]>;
   abstract findAll(): Promise<Coupon[]>;
   abstract create(coupon: Coupon): Promise<Coupon>;
   abstract update(coupon: Coupon): Promise<Coupon>;

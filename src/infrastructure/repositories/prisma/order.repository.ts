@@ -26,6 +26,21 @@ export class OrderRepository implements IOrderRepository {
   }
 
   // ANCHOR findManyByUserId
+  /**
+   * TODO: [성능 개선 필요] ORDER BY 최적화
+   * 현재 상태: WHERE user_id = ? ORDER BY created_at DESC
+   *
+   * 개선 방안:
+   * 1. 복합 인덱스 추가: (user_id, created_at DESC)
+   *    - 현재는 user_id 단일 인덱스만 존재
+   *    - Covering Index로 설계하면 인덱스만으로 쿼리 완결 가능
+   * 2. 인덱스 생성 쿼리:
+   *    CREATE INDEX idx_orders_user_created ON orders(user_id, created_at DESC);
+   *
+   * 예상 효과:
+   * - 정렬을 위한 filesort 연산 제거
+   * - 인덱스 스캔만으로 결과 반환
+   */
   async findManyByUserId(userId: number): Promise<Order[]> {
     const records = await this.prismaClient.orders.findMany({
       where: { user_id: userId },
@@ -105,6 +120,18 @@ export class OrderItemRepository implements IOrderItemRepository {
   }
 
   // ANCHOR findManyByOrderId
+  /**
+   * TODO: [성능 개선 고려] 인덱스 활용
+   * 현재 상태: WHERE order_id = ? 조건으로 조회
+   * - 이미 idx_order_id 인덱스가 존재하여 기본 성능은 양호
+   *
+   * 추가 최적화 고려사항:
+   * 1. 자주 함께 조회되는 컬럼이 있다면 Covering Index 고려
+   *    예: SELECT id, product_option_id, quantity만 조회하는 경우
+   *    CREATE INDEX idx_order_items_covering ON order_items(order_id, id, product_option_id, quantity);
+   *
+   * 현재는 큰 문제 없으나, 대용량 데이터 시 모니터링 필요
+   */
   async findManyByOrderId(orderId: number): Promise<OrderItem[]> {
     const records = await this.prismaClient.order_items.findMany({
       where: { order_id: BigInt(orderId) },
